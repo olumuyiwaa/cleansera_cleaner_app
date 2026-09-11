@@ -56,9 +56,7 @@ class _JobBody extends ConsumerWidget {
         await Geolocator.requestPermission();
       }
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-        ),
+        desiredAccuracy: LocationAccuracy.medium,
       );
       lat = pos.latitude;
       lng = pos.longitude;
