@@ -20,11 +20,10 @@ class ApiConstants {
   static const String startJob = '/cleaner/bookings';
   static const String completeJob = '/cleaner/bookings';
   static const String checkIn = '/cleaner/bookings';
-  static const String checkOut = '/cleaner/bookings';
-  static const String updateStatus = '/cleaner/bookings';
 
+  // /checklists/:bookingId (get/put/delete) and
+  // /checklists/:bookingId/items/:itemId/complete (mark one item done).
   static const String jobChecklist = '/checklists';
-  static const String completeChecklistItem = '/checklists/items';
 
   static const String notifications = '/notifications';
   static const String registerFcm = '/notifications/fcm-token';

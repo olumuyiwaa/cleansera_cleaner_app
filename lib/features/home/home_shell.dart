@@ -350,6 +350,36 @@ class _ProfileTab extends ConsumerWidget {
             ],
           ),
         ),
+        const SizedBox(height: 16),
+        Card(
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit_outlined, color: AppColors.primary),
+                title: const Text('Edit profile'),
+                subtitle: const Text('Photo and phone number'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/home/profile'),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.calendar_month_outlined, color: AppColors.primary),
+                title: const Text('Availability'),
+                subtitle: const Text('Set the hours you can be booked'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/home/profile/availability'),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.folder_outlined, color: AppColors.primary),
+                title: const Text('Documents'),
+                subtitle: const Text('ID, certifications, and insurance'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/home/profile/documents'),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 24),
         OutlinedButton.icon(
           onPressed: () async {

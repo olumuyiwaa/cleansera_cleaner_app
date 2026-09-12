@@ -25,24 +25,40 @@ class AuthRepository {
       ApiConstants.login,
       data: {'email': email, 'password': password},
     );
-    final data = res.data as Map<String, dynamic>;
+    // Every backend response is wrapped as { success, message, data }.
+    final data = unwrapEnvelope(res.data);
     final access = data['accessToken'] as String;
     final refresh = data['refreshToken'] as String;
-    final user = User.fromJson(data['user'] as Map<String, dynamic>);
+
+    // Login now returns `user` (and, for a cleaner account, `cleanerProfile`)
+    // directly — no separate round-trip needed for the common case. Still
+    // fall back to a dedicated fetch if either is ever missing, so an older
+    // backend build doesn't break the app outright.
+    User user;
+    if (data['user'] is Map<String, dynamic>) {
+      user = User.fromJson(data['user'] as Map<String, dynamic>);
+    } else {
+      final me = await _dio.get(
+        ApiConstants.me,
+        options: Options(headers: {'Authorization': 'Bearer $access'}),
+      );
+      user = User.fromJson(unwrapEnvelope(me.data));
+    }
 
     CleanerProfile? profile;
     if (data['cleanerProfile'] is Map<String, dynamic>) {
-      profile =
-          CleanerProfile.fromJson(data['cleanerProfile'] as Map<String, dynamic>);
+      profile = CleanerProfile.fromJson(
+          data['cleanerProfile'] as Map<String, dynamic>);
     } else {
-      // Fetch dedicated cleaner profile after login
+      // Not every login is a cleaner (or the backend didn't include it) —
+      // fetch the dedicated cleaner profile; absence here just means this
+      // account isn't an active cleaner anywhere, which the caller handles.
       try {
         final me = await _dio.get(
           ApiConstants.cleanerMe,
           options: Options(headers: {'Authorization': 'Bearer $access'}),
         );
-        profile =
-            CleanerProfile.fromJson(me.data as Map<String, dynamic>);
+        profile = CleanerProfile.fromJson(unwrapEnvelope(me.data));
       } catch (_) {
         profile = null;
       }
@@ -94,8 +110,7 @@ class AuthRepository {
 
   Future<CleanerProfile> fetchCleanerMe() async {
     final res = await _dio.get(ApiConstants.cleanerMe);
-    final profile =
-        CleanerProfile.fromJson(res.data as Map<String, dynamic>);
+    final profile = CleanerProfile.fromJson(unwrapEnvelope(res.data));
     await _storage.write(
       key: AppConstants.storageCleanerProfile,
       value: jsonEncode(profile.toJson()),

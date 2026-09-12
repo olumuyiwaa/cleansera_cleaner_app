@@ -6,7 +6,9 @@ import '../../features/auth/presentation/login_screen.dart';
 import '../../features/home/home_shell.dart';
 import '../../features/jobs/presentation/job_detail_screen.dart';
 import '../../features/jobs/presentation/jobs_list_screen.dart';
-import '../../features/profile/profile_screen.dart';
+import '../../features/profile/presentation/availability_screen.dart';
+import '../../features/profile/presentation/documents_screen.dart';
+import '../../features/profile/presentation/profile_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/splash_screen.dart';
 
@@ -61,6 +63,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'profile',
             builder: (_, __) => const ProfileScreen(),
+            routes: [
+              GoRoute(
+                path: 'availability',
+                builder: (_, __) => const AvailabilityScreen(),
+              ),
+              GoRoute(
+                path: 'documents',
+                builder: (_, __) => const DocumentsScreen(),
+              ),
+            ],
           ),
         ],
       ),

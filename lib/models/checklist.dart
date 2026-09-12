@@ -37,9 +37,16 @@ class ChecklistItem extends Equatable {
   factory ChecklistItem.fromJson(Map<String, dynamic> json) {
     return ChecklistItem(
       id: json['id'] as String,
-      title: json['title'] as String? ?? json['name'] as String? ?? '',
+      // Backend stores items as { id, label, done } — title/name and
+      // isCompleted/completed are accepted too in case a future endpoint
+      // uses richer field names.
+      title: json['label'] as String? ??
+          json['title'] as String? ??
+          json['name'] as String? ??
+          '',
       description: json['description'] as String?,
-      isCompleted: json['isCompleted'] as bool? ??
+      isCompleted: json['done'] as bool? ??
+          json['isCompleted'] as bool? ??
           json['completed'] as bool? ??
           false,
       completedAt: json['completedAt'] != null

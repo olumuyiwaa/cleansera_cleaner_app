@@ -26,9 +26,7 @@ class JobsRepository {
       queryParameters: query.isEmpty ? null : query,
     );
 
-    final list = res.data is List
-        ? res.data as List
-        : (res.data['data'] as List? ?? res.data['bookings'] as List? ?? []);
+    final list = unwrapListEnvelope(res.data);
 
     return list
         .map((e) => Job.fromJson(e as Map<String, dynamic>))
@@ -37,69 +35,61 @@ class JobsRepository {
 
   Future<Job> fetchJob(String id) async {
     final res = await _dio.get('${ApiConstants.jobById}/$id');
-    final data = res.data is Map && res.data['data'] != null
-        ? res.data['data'] as Map<String, dynamic>
-        : res.data as Map<String, dynamic>;
-    return Job.fromJson(data);
+    return Job.fromJson(unwrapEnvelope(res.data));
   }
 
+  /// lat/lng match the backend's check-in contract exactly (it records them
+  /// as checkInLat/checkInLng and geofences against the booking address).
   Future<Job> checkIn(String jobId, {double? lat, double? lng}) async {
     final res = await _dio.post(
       '${ApiConstants.checkIn}/$jobId/check-in',
       data: {
-        if (lat != null) 'latitude': lat,
-        if (lng != null) 'longitude': lng,
+        if (lat != null) 'lat': lat,
+        if (lng != null) 'lng': lng,
       },
     );
-    return Job.fromJson(_unwrap(res.data));
+    return Job.fromJson(unwrapEnvelope(res.data));
   }
 
   Future<Job> startJob(String jobId) async {
     final res = await _dio.post('${ApiConstants.startJob}/$jobId/start');
-    return Job.fromJson(_unwrap(res.data));
+    return Job.fromJson(unwrapEnvelope(res.data));
   }
 
   Future<Job> completeJob(
     String jobId, {
     String? notes,
-    List<String>? photoKeys,
+    double? lat,
+    double? lng,
   }) async {
     final res = await _dio.post(
       '${ApiConstants.completeJob}/$jobId/complete',
       data: {
         if (notes != null) 'notes': notes,
-        if (photoKeys != null) 'photoKeys': photoKeys,
+        if (lat != null) 'lat': lat,
+        if (lng != null) 'lng': lng,
       },
     );
-    return Job.fromJson(_unwrap(res.data));
-  }
-
-  Future<Job> updateStatus(String jobId, String status) async {
-    final res = await _dio.patch(
-      '${ApiConstants.updateStatus}/$jobId/status',
-      data: {'status': status},
-    );
-    return Job.fromJson(_unwrap(res.data));
+    return Job.fromJson(unwrapEnvelope(res.data));
   }
 
   Future<JobChecklist> fetchChecklist(String bookingId) async {
-    final res =
-        await _dio.get('${ApiConstants.jobChecklist}/booking/$bookingId');
-    return JobChecklist.fromJson(_unwrap(res.data));
+    final res = await _dio.get('${ApiConstants.jobChecklist}/$bookingId');
+    return JobChecklist.fromJson(unwrapEnvelope(res.data));
   }
 
-  Future<ChecklistItem> completeChecklistItem(String itemId) async {
+  Future<ChecklistItem> completeChecklistItem(
+    String bookingId,
+    String itemId, {
+    bool done = true,
+  }) async {
     final res = await _dio.post(
-      '${ApiConstants.completeChecklistItem}/$itemId/complete',
+      '${ApiConstants.jobChecklist}/$bookingId/items/$itemId/complete',
+      data: {'done': done},
     );
-    return ChecklistItem.fromJson(_unwrap(res.data));
-  }
-
-  Map<String, dynamic> _unwrap(dynamic data) {
-    if (data is Map<String, dynamic> && data['data'] is Map<String, dynamic>) {
-      return data['data'] as Map<String, dynamic>;
-    }
-    return data as Map<String, dynamic>;
+    final data = unwrapEnvelope(res.data);
+    // Backend returns { checklist, item } for this endpoint.
+    return ChecklistItem.fromJson(data['item'] as Map<String, dynamic>);
   }
 }
 

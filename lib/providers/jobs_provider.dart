@@ -96,7 +96,7 @@ class JobActionsNotifier extends StateNotifier<AsyncValue<void>> {
   Future<void> completeChecklistItem(String itemId, String bookingId) async {
     state = const AsyncLoading();
     try {
-      await _repo.completeChecklistItem(itemId);
+      await _repo.completeChecklistItem(bookingId, itemId);
       _ref.invalidate(jobChecklistProvider(bookingId));
       state = const AsyncData(null);
     } catch (e, st) {

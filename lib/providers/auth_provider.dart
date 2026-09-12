@@ -106,6 +106,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
+  /// Re-fetches the cleaner's own profile and updates the cached copy used
+  /// by the bottom-nav Profile tab — called after a profile/avatar edit so
+  /// that summary view doesn't show stale data until the next app launch.
+  Future<void> refreshCleanerProfile() async {
+    try {
+      final fresh = await _repo.fetchCleanerMe();
+      state = state.copyWith(profile: fresh);
+    } catch (_) {
+      // Best-effort — the dedicated profile screen already has the fresh
+      // data regardless of whether this background sync succeeds.
+    }
+  }
+
   String _mapError(Object e) {
     final msg = e.toString();
     if (msg.contains('401') || msg.contains('Invalid')) {
