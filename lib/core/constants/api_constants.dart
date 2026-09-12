@@ -3,7 +3,7 @@ class ApiConstants {
 
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:8000',
+    defaultValue: 'http://localhost:8000/api/v1',
   );
 
   static const String login = '/auth/login';
@@ -15,13 +15,13 @@ class ApiConstants {
   static const String cleanerAvailability = '/cleaners/me/availability';
   static const String cleanerDocuments = '/cleaners/me/documents';
 
-  static const String myJobs = '/bookings/my';
-  static const String jobById = '/bookings';
-  static const String startJob = '/bookings';
-  static const String completeJob = '/bookings';
-  static const String checkIn = '/bookings';
-  static const String checkOut = '/bookings';
-  static const String updateStatus = '/bookings';
+  static const String myJobs = '/cleaner/bookings/my';
+  static const String jobById = '/cleaner/bookings';
+  static const String startJob = '/cleaner/bookings';
+  static const String completeJob = '/cleaner/bookings';
+  static const String checkIn = '/cleaner/bookings';
+  static const String checkOut = '/cleaner/bookings';
+  static const String updateStatus = '/cleaner/bookings';
 
   static const String jobChecklist = '/checklists';
   static const String completeChecklistItem = '/checklists/items';
