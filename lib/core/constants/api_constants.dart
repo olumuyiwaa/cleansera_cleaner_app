@@ -27,5 +27,11 @@ class ApiConstants {
 
   static const String notifications = '/notifications';
   static const String registerFcm = '/notifications/fcm-token';
-  static const String conversations = '/messaging/conversations';
+  // The backend mounts the messaging module at '/messaging' itself (see
+  // cleansera_sass/src/routes/index.js: router.use('/messaging', ...)) —
+  // there is no '/conversations' sub-path. This constant pointed at a path
+  // that doesn't exist on the server, which is why no messaging feature in
+  // this app has ever been able to load a thread.
+  static const String conversations = '/messaging';
+  static const String messagesReadPath = '/messaging/messages'; // + /:id/read
 }

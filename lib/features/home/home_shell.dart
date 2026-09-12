@@ -62,6 +62,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                   : 'Profile',
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.forum_outlined),
+            tooltip: 'Messages',
+            onPressed: () => context.push('/home/messages'),
+          ),
           if (auth.profile?.businessName != null)
             Padding(
               padding: const EdgeInsets.only(right: 12),
@@ -376,6 +381,14 @@ class _ProfileTab extends ConsumerWidget {
                 subtitle: const Text('ID, certifications, and insurance'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => context.push('/home/profile/documents'),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.payments_outlined, color: AppColors.primary),
+                title: const Text('Earnings'),
+                subtitle: const Text('Value of jobs you\'ve completed'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/home/profile/earnings'),
               ),
             ],
           ),

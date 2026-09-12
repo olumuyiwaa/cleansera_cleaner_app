@@ -199,6 +199,37 @@ class Job extends Equatable {
           JobAddress.fromJson(json['customerAddress'] as Map<String, dynamic>);
     }
 
+    // The backend serializes a raw Prisma Booking, not a bespoke DTO, so
+    // the price field is `quotedPriceCents` — not `totalCents`/`priceCents`.
+    // Those two are kept as a fallback only in case a future endpoint does
+    // shape the response differently.
+    final totalCents = json['quotedPriceCents'] as int? ??
+        json['totalCents'] as int? ??
+        json['priceCents'] as int?;
+
+    // checkedInAt/checkedOutAt live on BookingAssignment, not Booking itself.
+    // /cleaner/bookings/my and /cleaner/bookings/:id both scope the
+    // `assignments` include to `where: { cleanerId: <this cleaner> }`, so
+    // when present it's a single-element list for this cleaner's own
+    // assignment.
+    final assignments = json['assignments'] as List<dynamic>?;
+    final myAssignment = (assignments != null && assignments.isNotEmpty)
+        ? assignments.first as Map<String, dynamic>
+        : null;
+    final checkedInAt = myAssignment?['checkedInAt'] as String? ??
+        json['checkedInAt'] as String?;
+
+    // Booking has no completedAt column at all — JobChecklist does, but
+    // only once a checklist exists and was marked done. Falling back to
+    // updatedAt for a COMPLETED booking gives a reasonable timestamp
+    // instead of always showing nothing.
+    final checklist = json['checklist'] as Map<String, dynamic>?;
+    final completedAt = checklist?['completedAt'] as String? ??
+        json['completedAt'] as String? ??
+        (jobStatusFromString(json['status'] as String?) == JobStatus.completed
+            ? json['updatedAt'] as String?
+            : null);
+
     return Job(
       id: json['id'] as String,
       status: jobStatusFromString(json['status'] as String?),
@@ -214,12 +245,12 @@ class Job extends Equatable {
           : null,
       address: addr,
       notes: json['notes'] as String? ?? json['specialInstructions'] as String?,
-      totalCents: json['totalCents'] as int? ?? json['priceCents'] as int?,
-      checkedInAt: json['checkedInAt'] != null
-          ? DateTime.tryParse(json['checkedInAt'] as String)?.toLocal()
+      totalCents: totalCents,
+      checkedInAt: checkedInAt != null
+          ? DateTime.tryParse(checkedInAt)?.toLocal()
           : null,
-      completedAt: json['completedAt'] != null
-          ? DateTime.tryParse(json['completedAt'] as String)?.toLocal()
+      completedAt: completedAt != null
+          ? DateTime.tryParse(completedAt)?.toLocal()
           : null,
       checklistCompleted: json['checklistCompleted'] as bool? ?? false,
     );

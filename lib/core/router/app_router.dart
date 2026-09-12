@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/login_screen.dart';
+import '../../features/earnings/presentation/earnings_screen.dart';
 import '../../features/home/home_shell.dart';
 import '../../features/jobs/presentation/job_detail_screen.dart';
 import '../../features/jobs/presentation/jobs_list_screen.dart';
+import '../../features/messaging/presentation/messages_screen.dart';
 import '../../features/profile/presentation/availability_screen.dart';
 import '../../features/profile/presentation/documents_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
@@ -61,6 +63,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             },
           ),
           GoRoute(
+            path: 'messages',
+            builder: (_, __) => const MessagesScreen(),
+          ),
+          GoRoute(
             path: 'profile',
             builder: (_, __) => const ProfileScreen(),
             routes: [
@@ -71,6 +77,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'documents',
                 builder: (_, __) => const DocumentsScreen(),
+              ),
+              GoRoute(
+                path: 'earnings',
+                builder: (_, __) => const EarningsScreen(),
               ),
             ],
           ),
