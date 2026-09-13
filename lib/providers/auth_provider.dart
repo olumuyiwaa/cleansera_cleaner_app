@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/auth/data/auth_repository.dart';
@@ -68,6 +70,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final fresh = await _repo.fetchCleanerMe();
         state = state.copyWith(profile: fresh);
       } catch (_) {}
+      // Re-register for push on every cold start of an existing session —
+      // FCM tokens rotate, so this is the standard way to keep the
+      // backend's CleanerDeviceToken current without a background service.
+      unawaited(_repo.registerPushToken());
     } else {
       state = const AuthState(status: AuthStatus.unauthenticated);
     }
@@ -90,6 +96,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         user: result.user,
         profile: result.profile,
       );
+      unawaited(_repo.registerPushToken());
       return true;
     } catch (e) {
       state = state.copyWith(

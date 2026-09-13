@@ -91,6 +91,71 @@ class JobsRepository {
     // Backend returns { checklist, item } for this endpoint.
     return ChecklistItem.fromJson(data['item'] as Map<String, dynamic>);
   }
+
+  /// Notifies the customer (SMS/email — there's no customer app to push to)
+  /// that the cleaner is on the way. Only valid before check-in; the
+  /// backend returns 409 if this booking is already checked in.
+  Future<void> sendOnMyWay(String jobId) async {
+    await _dio.post('${ApiConstants.onMyWay}/$jobId/on-my-way');
+  }
+
+  /// Step 1 of photo proof: ask the backend for a presigned upload URL.
+  Future<({String uploadUrl, String storageKey})> getPhotoUploadUrl(
+    String jobId, {
+    required String stage,
+    String contentType = 'image/jpeg',
+    String? filename,
+  }) async {
+    final res = await _dio.post(
+      '${ApiConstants.jobPhotoUploadUrl}/$jobId/photos/upload-url',
+      data: {
+        'stage': stage,
+        'contentType': contentType,
+        if (filename != null) 'filename': filename,
+      },
+    );
+    final data = unwrapEnvelope(res.data);
+    return (
+      uploadUrl: data['uploadUrl'] as String,
+      storageKey: data['storageKey'] as String,
+    );
+  }
+
+  /// Step 2: PUT the raw image bytes straight to storage. Deliberately uses
+  /// a bare Dio() rather than the app's shared client — the presigned URL
+  /// already carries its own auth in the query string, so it shouldn't get
+  /// this app's Bearer token or run through the 401-refresh interceptor
+  /// meant for our own API.
+  Future<void> uploadPhotoBytes(
+    String uploadUrl,
+    List<int> bytes, {
+    String contentType = 'image/jpeg',
+  }) async {
+    final plainDio = Dio();
+    await plainDio.put(
+      uploadUrl,
+      data: Stream.fromIterable([bytes]),
+      options: Options(
+        headers: {
+          'Content-Type': contentType,
+          Headers.contentLengthHeader: bytes.length,
+        },
+      ),
+    );
+  }
+
+  /// Step 3: register the uploaded photo against the booking.
+  Future<JobPhoto> createJobPhoto(
+    String jobId, {
+    required String stage,
+    required String storageKey,
+  }) async {
+    final res = await _dio.post(
+      '${ApiConstants.jobPhotos}/$jobId/photos',
+      data: {'stage': stage, 'storageKey': storageKey},
+    );
+    return JobPhoto.fromJson(unwrapEnvelope(res.data));
+  }
 }
 
 final jobsRepositoryProvider = Provider<JobsRepository>((ref) {

@@ -20,13 +20,23 @@ class ApiConstants {
   static const String startJob = '/cleaner/bookings';
   static const String completeJob = '/cleaner/bookings';
   static const String checkIn = '/cleaner/bookings';
+  static const String onMyWay = '/cleaner/bookings';
+  static const String jobPhotoUploadUrl = '/cleaner/bookings';
+  static const String jobPhotos = '/cleaner/bookings';
 
   // /checklists/:bookingId (get/put/delete) and
   // /checklists/:bookingId/items/:itemId/complete (mark one item done).
   static const String jobChecklist = '/checklists';
 
   static const String notifications = '/notifications';
-  static const String registerFcm = '/notifications/fcm-token';
+  // Registers/unregisters this device's FCM token. Nested under /cleaners/me
+  // (not /notifications) because the backend's device-token registration
+  // lives in the cleanerSelf module: see
+  // cleansera_sass/src/modules/cleanerSelf/cleanerSelf.routes.js
+  // (POST/DELETE /cleaners/me/device-token). A previous version of this
+  // constant pointed at '/notifications/fcm-token', which doesn't exist on
+  // the server — same class of bug as the conversations path fixed below.
+  static const String registerFcm = '/cleaners/me/device-token';
   // The backend mounts the messaging module at '/messaging' itself (see
   // cleansera_sass/src/routes/index.js: router.use('/messaging', ...)) —
   // there is no '/conversations' sub-path. This constant pointed at a path

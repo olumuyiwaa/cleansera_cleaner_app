@@ -12,8 +12,10 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // Optional: initialize Firebase for push when you add google-services files
-  // await Firebase.initializeApp();
+  // Firebase is initialized lazily by PushService the first time a cleaner
+  // is authenticated (see AuthNotifier / PushService.registerToken), rather
+  // than unconditionally here — this keeps app startup working even on a
+  // build without google-services.json/GoogleService-Info.plist configured.
 
   runApp(
     const ProviderScope(

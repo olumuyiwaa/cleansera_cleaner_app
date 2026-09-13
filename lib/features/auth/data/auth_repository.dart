@@ -7,6 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../core/services/push_service.dart';
 import '../../../models/cleaner_profile.dart';
 import '../../../models/user.dart';
 
@@ -79,11 +80,20 @@ class AuthRepository {
   }
 
   Future<void> logout() async {
+    // Best-effort: stop this device's push notifications before the token
+    // used to authorize the unregister call is cleared below.
+    await PushService.instance.unregisterToken(_dio);
     try {
       await _dio.post(ApiConstants.logout);
     } catch (_) {}
     await _storage.deleteAll();
   }
+
+  /// Registers this device for push notifications. Called after a
+  /// successful login and once at app bootstrap for an already-authenticated
+  /// session (see AuthNotifier). Never throws — push is a nice-to-have, not
+  /// a login-blocking dependency.
+  Future<void> registerPushToken() => PushService.instance.registerToken(_dio);
 
   Future<User?> restoreUser() async {
     final raw = await _storage.read(key: AppConstants.storageUser);

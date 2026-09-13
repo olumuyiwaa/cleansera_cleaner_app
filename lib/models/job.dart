@@ -141,6 +141,29 @@ class JobService extends Equatable {
   List<Object?> get props => [id, name, estimatedMinutes];
 }
 
+class JobPhoto extends Equatable {
+  const JobPhoto({
+    required this.id,
+    required this.stage,
+    required this.storageKey,
+  });
+
+  final String id;
+  final String stage; // 'BEFORE' | 'AFTER'
+  final String storageKey;
+
+  factory JobPhoto.fromJson(Map<String, dynamic> json) {
+    return JobPhoto(
+      id: json['id'] as String,
+      stage: json['stage'] as String? ?? 'AFTER',
+      storageKey: json['storageKey'] as String? ?? '',
+    );
+  }
+
+  @override
+  List<Object?> get props => [id, stage, storageKey];
+}
+
 class Job extends Equatable {
   const Job({
     required this.id,
@@ -154,7 +177,9 @@ class Job extends Equatable {
     this.totalCents,
     this.checkedInAt,
     this.completedAt,
+    this.onMyWayAt,
     this.checklistCompleted = false,
+    this.photos = const [],
   });
 
   final String id;
@@ -168,7 +193,9 @@ class Job extends Equatable {
   final int? totalCents;
   final DateTime? checkedInAt;
   final DateTime? completedAt;
+  final DateTime? onMyWayAt;
   final bool checklistCompleted;
+  final List<JobPhoto> photos;
 
   bool get canCheckIn =>
       status == JobStatus.assigned ||
@@ -181,6 +208,12 @@ class Job extends Equatable {
       status == JobStatus.confirmed;
 
   bool get canComplete => status == JobStatus.inProgress;
+
+  // "On my way" only makes sense before the cleaner has actually checked in
+  // — the backend enforces this too (409 if already checked in).
+  bool get canSendOnMyWay => canCheckIn && checkedInAt == null;
+
+  bool get hasAfterPhoto => photos.any((p) => p.stage == 'AFTER');
 
   bool get isActive =>
       status == JobStatus.inProgress || status == JobStatus.enRoute;
@@ -218,6 +251,9 @@ class Job extends Equatable {
         : null;
     final checkedInAt = myAssignment?['checkedInAt'] as String? ??
         json['checkedInAt'] as String?;
+    final onMyWayAt = myAssignment?['onMyWayAt'] as String?;
+
+    final photosJson = json['photos'] as List<dynamic>?;
 
     // Booking has no completedAt column at all — JobChecklist does, but
     // only once a checklist exists and was marked done. Falling back to
@@ -252,7 +288,13 @@ class Job extends Equatable {
       completedAt: completedAt != null
           ? DateTime.tryParse(completedAt)?.toLocal()
           : null,
+      onMyWayAt: onMyWayAt != null ? DateTime.tryParse(onMyWayAt)?.toLocal() : null,
       checklistCompleted: json['checklistCompleted'] as bool? ?? false,
+      photos: photosJson != null
+          ? photosJson
+              .map((e) => JobPhoto.fromJson(e as Map<String, dynamic>))
+              .toList()
+          : const [],
     );
   }
 
@@ -269,6 +311,8 @@ class Job extends Equatable {
         totalCents,
         checkedInAt,
         completedAt,
+        onMyWayAt,
         checklistCompleted,
+        photos,
       ];
 }

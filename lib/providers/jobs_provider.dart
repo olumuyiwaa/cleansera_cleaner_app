@@ -104,6 +104,48 @@ class JobActionsNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 
+  Future<bool> sendOnMyWay(String jobId) async {
+    state = const AsyncLoading();
+    try {
+      await _repo.sendOnMyWay(jobId);
+      _invalidate(jobId);
+      state = const AsyncData(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return false;
+    }
+  }
+
+  /// Full photo-proof flow in one call: presigned URL -> upload bytes ->
+  /// register against the booking -> refresh the job so canComplete/
+  /// hasAfterPhoto reflect the new photo immediately.
+  Future<bool> uploadJobPhoto(
+    String jobId, {
+    required String stage,
+    required List<int> bytes,
+    String contentType = 'image/jpeg',
+    String? filename,
+  }) async {
+    state = const AsyncLoading();
+    try {
+      final target = await _repo.getPhotoUploadUrl(
+        jobId,
+        stage: stage,
+        contentType: contentType,
+        filename: filename,
+      );
+      await _repo.uploadPhotoBytes(target.uploadUrl, bytes, contentType: contentType);
+      await _repo.createJobPhoto(jobId, stage: stage, storageKey: target.storageKey);
+      _invalidate(jobId);
+      state = const AsyncData(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return false;
+    }
+  }
+
   void _invalidate(String jobId) {
     _ref.invalidate(todayJobsProvider);
     _ref.invalidate(upcomingJobsProvider);

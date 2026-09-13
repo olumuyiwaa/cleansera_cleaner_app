@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../models/job.dart';
 import '../../../providers/jobs_provider.dart';
 import '../../checklist/checklist_section.dart';
+import 'job_photos_section.dart';
 
 class JobDetailScreen extends ConsumerWidget {
   const JobDetailScreen({super.key, required this.jobId});
@@ -164,6 +165,8 @@ class _JobBody extends ConsumerWidget {
               ],
               const SizedBox(height: 16),
               ChecklistSection(bookingId: job.id),
+              const SizedBox(height: 12),
+              JobPhotosSection(job: job),
             ],
           ),
         ),
@@ -180,6 +183,30 @@ class _JobBody extends ConsumerWidget {
                       style: TextStyle(color: AppColors.error),
                     ),
                   ),
+                if (job.canSendOnMyWay)
+                  OutlinedButton.icon(
+                    onPressed: busy
+                        ? null
+                        : () async {
+                            final ok = await ref
+                                .read(jobActionsProvider.notifier)
+                                .sendOnMyWay(job.id);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    ok
+                                        ? "Customer notified you're on your way"
+                                        : "Couldn't send notification. Try again.",
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                    icon: const Icon(Icons.directions_car_outlined),
+                    label: Text(busy ? 'Working…' : "On my way"),
+                  ),
+                if (job.canSendOnMyWay) const SizedBox(height: 8),
                 if (job.canCheckIn)
                   ElevatedButton.icon(
                     onPressed: busy ? null : () => _checkIn(ref),
@@ -196,8 +223,16 @@ class _JobBody extends ConsumerWidget {
                   ),
                 if (job.canComplete) ...[
                   const SizedBox(height: 8),
+                  if (!job.hasAfterPhoto)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        'Add an after-photo above to finish this job.',
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                      ),
+                    ),
                   ElevatedButton.icon(
-                    onPressed: busy
+                    onPressed: busy || !job.hasAfterPhoto
                         ? null
                         : () => ref
                             .read(jobActionsProvider.notifier)
