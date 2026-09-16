@@ -94,6 +94,39 @@ class EarningsSummary {
   }
 }
 
+/// Stripe Connect status for this cleaner's payout account. Mirrors the
+/// business-side Connect status shape used elsewhere in the platform, just
+/// resolved for the logged-in cleaner instead of a business.
+class StripeConnectStatus {
+  const StripeConnectStatus({
+    required this.connected,
+    required this.chargesEnabled,
+    required this.payoutsEnabled,
+    required this.detailsSubmitted,
+  });
+
+  final bool connected;
+  final bool chargesEnabled;
+  final bool payoutsEnabled;
+  final bool detailsSubmitted;
+
+  static const empty = StripeConnectStatus(
+    connected: false,
+    chargesEnabled: false,
+    payoutsEnabled: false,
+    detailsSubmitted: false,
+  );
+
+  factory StripeConnectStatus.fromJson(Map<String, dynamic> json) {
+    return StripeConnectStatus(
+      connected: json['connected'] as bool? ?? false,
+      chargesEnabled: json['chargesEnabled'] as bool? ?? false,
+      payoutsEnabled: json['payoutsEnabled'] as bool? ?? false,
+      detailsSubmitted: json['detailsSubmitted'] as bool? ?? false,
+    );
+  }
+}
+
 class EarningsRepository {
   EarningsRepository(this._dio);
 
@@ -102,6 +135,19 @@ class EarningsRepository {
   Future<EarningsSummary> fetchSummary() async {
     final res = await _dio.get(ApiConstants.cleanerEarnings);
     return EarningsSummary.fromJson(unwrapEnvelope(res.data));
+  }
+
+  Future<StripeConnectStatus> fetchStripeStatus() async {
+    final res = await _dio.get(ApiConstants.cleanerStripeStatus);
+    return StripeConnectStatus.fromJson(unwrapEnvelope(res.data));
+  }
+
+  /// Starts (or resumes) Stripe Connect onboarding and returns the hosted
+  /// onboarding URL to open in an in-app browser / external browser tab.
+  Future<String> fetchStripeOnboardingLink() async {
+    final res = await _dio.post(ApiConstants.cleanerStripeOnboardingLink);
+    final data = unwrapEnvelope(res.data);
+    return data['url'] as String;
   }
 }
 

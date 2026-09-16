@@ -15,6 +15,8 @@ class ApiConstants {
   static const String cleanerAvailability = '/cleaners/me/availability';
   static const String cleanerDocuments = '/cleaners/me/documents';
   static const String cleanerEarnings = '/cleaners/me/earnings';
+  static const String cleanerStripeStatus = '/cleaners/me/stripe/status';
+  static const String cleanerStripeOnboardingLink = '/cleaners/me/stripe/onboarding-link';
 
   static const String myJobs = '/cleaner/bookings/my';
   static const String jobById = '/cleaner/bookings';
