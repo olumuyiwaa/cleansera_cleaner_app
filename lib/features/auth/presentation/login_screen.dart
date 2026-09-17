@@ -36,9 +36,76 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _pickBusiness(String businessId) async {
+    final ok = await ref.read(authProvider.notifier).selectBusiness(businessId);
+    if (ok && mounted) {
+      context.go('/home');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
+
+    if (auth.needsBusinessSelection) {
+      final affiliations = auth.pendingAffiliations!;
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () =>
+                ref.read(authProvider.notifier).cancelBusinessSelection(),
+          ),
+          title: const Text('Choose a business'),
+        ),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'You work with more than one cleaning business on CleanSera. '
+                  'Which one do you want to sign into?',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                ),
+              ),
+              if (auth.error != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(auth.error!, style: const TextStyle(color: AppColors.error)),
+                ),
+                const SizedBox(height: 12),
+              ],
+              for (final a in affiliations)
+                Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    leading: const Icon(Icons.business_outlined, color: AppColors.primary),
+                    title: Text(a.businessName),
+                    subtitle: Text(a.role),
+                    trailing: auth.isLoading ? null : const Icon(Icons.chevron_right),
+                    enabled: !auth.isLoading,
+                    onTap: () => _pickBusiness(a.businessId),
+                  ),
+                ),
+              if (auth.isLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       body: SafeArea(

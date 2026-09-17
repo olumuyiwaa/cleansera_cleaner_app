@@ -8,6 +8,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/services/push_service.dart';
+import '../../../models/business_affiliation.dart';
 import '../../../models/cleaner_profile.dart';
 import '../../../models/user.dart';
 
@@ -21,13 +22,31 @@ class AuthRepository {
       login({
     required String email,
     required String password,
+    String? businessId,
   }) async {
     final res = await _dio.post(
       ApiConstants.login,
-      data: {'email': email, 'password': password},
+      data: {
+        'email': email,
+        'password': password,
+        if (businessId != null) 'businessId': businessId,
+      },
     );
     // Every backend response is wrapped as { success, message, data }.
     final data = unwrapEnvelope(res.data);
+
+    // Correct credentials, but this account is affiliated with more than
+    // one business (staff and/or cleaner at several businesses) — the
+    // backend deliberately issues no tokens here (see auth.service.js
+    // login()) and expects the client to re-submit this same call with a
+    // chosen `businessId`. No accessToken key is present in this response.
+    if (data['requiresBusinessSelection'] == true) {
+      final affiliations = (data['affiliations'] as List<dynamic>? ?? [])
+          .map((a) => BusinessAffiliation.fromJson(a as Map<String, dynamic>))
+          .toList();
+      throw BusinessSelectionRequiredException(affiliations);
+    }
+
     final access = data['accessToken'] as String;
     final refresh = data['refreshToken'] as String;
 
@@ -84,7 +103,16 @@ class AuthRepository {
     // used to authorize the unregister call is cleared below.
     await PushService.instance.unregisterToken(_dio);
     try {
-      await _dio.post(ApiConstants.logout);
+      // The backend requires `refreshToken` in the body (see
+      // cleansera_sass/src/modules/auth/auth.routes.js — it 400s without
+      // it) and deletes the matching Session row so the token can't be
+      // used again. Posting with no body silently failed validation here,
+      // so the server-side session was never actually revoked and a
+      // copied/stolen refresh token kept working after "logout".
+      final refresh = await _storage.read(key: AppConstants.storageRefreshToken);
+      if (refresh != null) {
+        await _dio.post(ApiConstants.logout, data: {'refreshToken': refresh});
+      }
     } catch (_) {}
     await _storage.deleteAll();
   }

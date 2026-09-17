@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/auth/data/auth_repository.dart';
+import '../models/business_affiliation.dart';
 import '../models/cleaner_profile.dart';
 import '../models/user.dart';
 
@@ -15,6 +16,7 @@ class AuthState {
     this.profile,
     this.error,
     this.isLoading = false,
+    this.pendingAffiliations,
   });
 
   final AuthStatus status;
@@ -23,8 +25,13 @@ class AuthState {
   final String? error;
   final bool isLoading;
 
+  /// Non-null only while the login flow is paused waiting for the user to
+  /// pick which business to sign into (see [BusinessSelectionRequiredException]).
+  final List<BusinessAffiliation>? pendingAffiliations;
+
   bool get isAuthenticated => status == AuthStatus.authenticated;
   bool get isCleanerActive => profile?.isActive == true;
+  bool get needsBusinessSelection => pendingAffiliations != null;
 
   AuthState copyWith({
     AuthStatus? status,
@@ -33,6 +40,8 @@ class AuthState {
     String? error,
     bool? isLoading,
     bool clearError = false,
+    List<BusinessAffiliation>? pendingAffiliations,
+    bool clearPendingAffiliations = false,
   }) {
     return AuthState(
       status: status ?? this.status,
@@ -40,6 +49,9 @@ class AuthState {
       profile: profile ?? this.profile,
       error: clearError ? null : (error ?? this.error),
       isLoading: isLoading ?? this.isLoading,
+      pendingAffiliations: clearPendingAffiliations
+          ? null
+          : (pendingAffiliations ?? this.pendingAffiliations),
     );
   }
 }
@@ -50,6 +62,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   final AuthRepository _repo;
+
+  // Held only in memory, only for the lifetime of an in-progress "pick a
+  // business" step, and cleared as soon as it resolves either way. Never
+  // written to storage.
+  String? _pendingEmail;
+  String? _pendingPassword;
 
   Future<void> _bootstrap() async {
     final token = await _repo.getAccessToken();
@@ -80,24 +98,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<bool> login(String email, String password) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoading: true, clearError: true, clearPendingAffiliations: true);
     try {
       final result = await _repo.login(email: email, password: password);
-      if (result.profile == null || !result.profile!.isActive) {
-        await _repo.logout();
-        state = const AuthState(
-          status: AuthStatus.unauthenticated,
-          error: 'No active cleaner profile for this account. Contact your business.',
-        );
-        return false;
-      }
-      state = AuthState(
-        status: AuthStatus.authenticated,
-        user: result.user,
-        profile: result.profile,
-      );
-      unawaited(_repo.registerPushToken());
-      return true;
+      return _applyLoginResult(result);
+    } on BusinessSelectionRequiredException catch (e) {
+      // Correct credentials — just ambiguous which business. Hold the
+      // credentials in memory only (never persisted) so selectBusiness()
+      // below can re-submit login with the chosen businessId without
+      // asking the cleaner to type their password again.
+      _pendingEmail = email;
+      _pendingPassword = password;
+      state = state.copyWith(isLoading: false, pendingAffiliations: e.affiliations);
+      return false;
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -106,6 +119,67 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return false;
     }
+  }
+
+  /// Completes a login that was paused by [BusinessSelectionRequiredException]
+  /// once the cleaner has picked which business to sign into.
+  Future<bool> selectBusiness(String businessId) async {
+    final email = _pendingEmail;
+    final password = _pendingPassword;
+    if (email == null || password == null) {
+      // Shouldn't happen from the UI (the picker only shows while
+      // pendingAffiliations is set, which implies these were just set too),
+      // but fail safely back to a plain login screen rather than crash.
+      state = state.copyWith(
+        clearPendingAffiliations: true,
+        error: 'Session expired — please sign in again.',
+      );
+      return false;
+    }
+
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final result = await _repo.login(
+        email: email,
+        password: password,
+        businessId: businessId,
+      );
+      _pendingEmail = null;
+      _pendingPassword = null;
+      return _applyLoginResult(result);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: _mapError(e));
+      return false;
+    }
+  }
+
+  /// Discards an in-progress business-selection step (e.g. the cleaner
+  /// backs out of the picker) so the login screen shows its normal form
+  /// again instead of being stuck.
+  void cancelBusinessSelection() {
+    _pendingEmail = null;
+    _pendingPassword = null;
+    state = state.copyWith(clearPendingAffiliations: true);
+  }
+
+  bool _applyLoginResult(
+    ({User user, CleanerProfile? profile, String access, String refresh}) result,
+  ) {
+    if (result.profile == null || !result.profile!.isActive) {
+      unawaited(_repo.logout());
+      state = const AuthState(
+        status: AuthStatus.unauthenticated,
+        error: 'No active cleaner profile for this account. Contact your business.',
+      );
+      return false;
+    }
+    state = AuthState(
+      status: AuthStatus.authenticated,
+      user: result.user,
+      profile: result.profile,
+    );
+    unawaited(_repo.registerPushToken());
+    return true;
   }
 
   Future<void> logout() async {
