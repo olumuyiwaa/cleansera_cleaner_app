@@ -174,6 +174,10 @@ class Job extends Equatable {
     this.service,
     this.address,
     this.notes,
+    this.accessCode,
+    this.keyLocation,
+    this.parkingInstructions,
+    this.petNotes,
     this.totalCents,
     this.checkedInAt,
     this.completedAt,
@@ -190,12 +194,29 @@ class Job extends Equatable {
   final JobService? service;
   final JobAddress? address;
   final String? notes;
+  // Site-specific info for this visit — see accessCode/keyLocation/
+  // parkingInstructions/petNotes/specialInstructions on the backend's
+  // Booking model. `notes` above already captures specialInstructions as a
+  // fallback; these four are kept as their own fields (rather than folded
+  // into `notes`) so the job detail screen can label each one clearly
+  // instead of dumping everything into one freeform block.
+  final String? accessCode;
+  final String? keyLocation;
+  final String? parkingInstructions;
+  final String? petNotes;
   final int? totalCents;
   final DateTime? checkedInAt;
   final DateTime? completedAt;
   final DateTime? onMyWayAt;
   final bool checklistCompleted;
   final List<JobPhoto> photos;
+
+  bool get hasSiteNotes =>
+      (accessCode?.isNotEmpty ?? false) ||
+      (keyLocation?.isNotEmpty ?? false) ||
+      (parkingInstructions?.isNotEmpty ?? false) ||
+      (petNotes?.isNotEmpty ?? false) ||
+      (notes?.isNotEmpty ?? false);
 
   bool get canCheckIn =>
       status == JobStatus.assigned ||
@@ -281,6 +302,10 @@ class Job extends Equatable {
           : null,
       address: addr,
       notes: json['notes'] as String? ?? json['specialInstructions'] as String?,
+      accessCode: json['accessCode'] as String?,
+      keyLocation: json['keyLocation'] as String?,
+      parkingInstructions: json['parkingInstructions'] as String?,
+      petNotes: json['petNotes'] as String?,
       totalCents: totalCents,
       checkedInAt: checkedInAt != null
           ? DateTime.tryParse(checkedInAt)?.toLocal()
@@ -308,6 +333,10 @@ class Job extends Equatable {
         service,
         address,
         notes,
+        accessCode,
+        keyLocation,
+        parkingInstructions,
+        petNotes,
         totalCents,
         checkedInAt,
         completedAt,

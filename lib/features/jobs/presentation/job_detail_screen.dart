@@ -144,7 +144,7 @@ class _JobBody extends ConsumerWidget {
                   ),
                 ),
               ],
-              if (job.notes != null && job.notes!.isNotEmpty) ...[
+              if (job.hasSiteNotes) ...[
                 const SizedBox(height: 12),
                 Card(
                   child: Padding(
@@ -153,11 +153,41 @@ class _JobBody extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Notes',
+                          'Property notes',
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
-                        const SizedBox(height: 6),
-                        Text(job.notes!),
+                        const SizedBox(height: 10),
+                        if (job.accessCode != null && job.accessCode!.isNotEmpty)
+                          _PropertyNoteRow(
+                            icon: Icons.pin_outlined,
+                            label: 'Access code',
+                            value: job.accessCode!,
+                          ),
+                        if (job.keyLocation != null && job.keyLocation!.isNotEmpty)
+                          _PropertyNoteRow(
+                            icon: Icons.key_outlined,
+                            label: 'Key location',
+                            value: job.keyLocation!,
+                          ),
+                        if (job.parkingInstructions != null &&
+                            job.parkingInstructions!.isNotEmpty)
+                          _PropertyNoteRow(
+                            icon: Icons.local_parking_outlined,
+                            label: 'Parking',
+                            value: job.parkingInstructions!,
+                          ),
+                        if (job.petNotes != null && job.petNotes!.isNotEmpty)
+                          _PropertyNoteRow(
+                            icon: Icons.pets_outlined,
+                            label: 'Pets',
+                            value: job.petNotes!,
+                          ),
+                        if (job.notes != null && job.notes!.isNotEmpty)
+                          _PropertyNoteRow(
+                            icon: Icons.notes_outlined,
+                            label: 'Notes',
+                            value: job.notes!,
+                          ),
                       ],
                     ),
                   ),
@@ -249,6 +279,47 @@ class _JobBody extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _PropertyNoteRow extends StatelessWidget {
+  const _PropertyNoteRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: AppColors.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                Text(value),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
