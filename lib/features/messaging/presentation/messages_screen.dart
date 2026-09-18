@@ -74,7 +74,7 @@ class MessagesScreen extends ConsumerWidget {
                     : (last?.attachmentKey != null ? 'Attachment' : 'No messages yet');
                 final time = last?.createdAt;
 
-                return ListTile(
+                return Padding(padding: EdgeInsetsGeometry.all(8),child: ListTile(
                   leading: CircleAvatar(
                     backgroundColor: AppColors.primary.withOpacity(0.12),
                     child: const Icon(Icons.business, color: AppColors.primary),
@@ -85,6 +85,8 @@ class MessagesScreen extends ConsumerWidget {
                     timeago.format(time!),
                     style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(8)),
+                  tileColor: Colors.white,
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
@@ -92,7 +94,7 @@ class MessagesScreen extends ConsumerWidget {
                       ),
                     );
                   },
-                );
+                ),);
               },
             ),
           );
