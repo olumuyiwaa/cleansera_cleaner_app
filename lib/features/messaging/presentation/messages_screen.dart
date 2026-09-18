@@ -5,17 +5,17 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../../../core/theme/app_theme.dart';
 import '../../../models/message.dart';
 import '../../../providers/messaging_provider.dart';
+import '../data/messaging_repository.dart';
 
 class MessagesScreen extends ConsumerWidget {
   const MessagesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final conversationAsync = ref.watch(myConversationProvider);
+    final conversationsAsync = ref.watch(conversationsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Messages')),
-      body: conversationAsync.when(
+      body: conversationsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Column(
@@ -24,30 +24,95 @@ class MessagesScreen extends ConsumerWidget {
               const Icon(Icons.error_outline, size: 48, color: AppColors.error),
               const SizedBox(height: 12),
               const Text('Could not load messages'),
-              const SizedBox(height: 8),
               TextButton(
-                onPressed: () => ref.invalidate(myConversationProvider),
+                onPressed: () => ref.invalidate(conversationsProvider),
                 child: const Text('Retry'),
               ),
             ],
           ),
         ),
-        data: (conversation) => _ThreadView(conversationId: conversation.id),
+        data: (conversations) {
+          if (conversations.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.forum_outlined, size: 48, color: AppColors.textSecondary),
+                  const SizedBox(height: 12),
+                  const Text('No conversations yet'),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: () async {
+                      final repo = ref.read(messagingRepositoryProvider);
+                      final conv = await repo.getOrCreateMyConversation();
+                      if (!context.mounted) return;
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ConversationScreen(conversationId: conv.id),
+                        ),
+                      );
+                      ref.invalidate(conversationsProvider);
+                    },
+                    child: const Text('Message your business'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () async => ref.invalidate(conversationsProvider),
+            child: ListView.separated(
+              itemCount: conversations.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final c = conversations[index];
+                final last = c.lastMessage;
+                final title = c.lastMessage?.sender?.fullName ?? 'Business';
+                final preview = last?.body?.trim().isNotEmpty == true
+                    ? last!.body!
+                    : (last?.attachmentKey != null ? 'Attachment' : 'No messages yet');
+                final time = last?.createdAt;
+
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: AppColors.primary.withOpacity(0.12),
+                    child: const Icon(Icons.business, color: AppColors.primary),
+                  ),
+                  title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(preview, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  trailing: Text(
+                    timeago.format(time!),
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ConversationScreen(conversationId: c.id),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          );
+        },
       ),
     );
   }
 }
 
-class _ThreadView extends ConsumerStatefulWidget {
-  const _ThreadView({required this.conversationId});
+class ConversationScreen extends ConsumerStatefulWidget {
+  const ConversationScreen({super.key, required this.conversationId});
 
   final String conversationId;
 
   @override
-  ConsumerState<_ThreadView> createState() => _ThreadViewState();
+  ConsumerState<ConversationScreen> createState() => _ConversationScreenState();
 }
 
-class _ThreadViewState extends ConsumerState<_ThreadView> {
+class _ConversationScreenState extends ConsumerState<ConversationScreen> {
+
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   bool _sending = false;
@@ -93,7 +158,9 @@ class _ThreadViewState extends ConsumerState<_ThreadView> {
     final currentUserId = ref.watch(currentUserIdProvider);
     final messagesAsync = ref.watch(messagesProvider(widget.conversationId));
 
-    return Column(
+    return Scaffold(
+      appBar: AppBar(title: const Text('Conversation details')),
+      body: Column(
       children: [
         Expanded(
           child: RefreshIndicator(
@@ -182,29 +249,30 @@ class _ThreadViewState extends ConsumerState<_ThreadView> {
                 const SizedBox(width: 8),
                 _sending
                     ? const Padding(
-                        padding: EdgeInsets.all(10),
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
+                  padding: EdgeInsets.all(10),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
                     : IconButton.filled(
-                        onPressed: _send,
-                        icon: const Icon(Icons.send),
-                        style: IconButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
+                  onPressed: _send,
+                  icon: const Icon(Icons.send),
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
               ],
             ),
           ),
         ),
       ],
-    );
+    ),);
   }
 }
+
 
 class _MessageBubble extends StatelessWidget {
   const _MessageBubble({required this.message, required this.mine});

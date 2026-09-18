@@ -15,6 +15,12 @@ final myConversationProvider =
   return repo.getOrCreateMyConversation();
 });
 
+final conversationsProvider =
+FutureProvider.autoDispose<List<Conversation>>((ref) async {
+  final repo = ref.watch(messagingRepositoryProvider);
+  return repo.listConversations();
+});
+
 final messagesProvider =
     FutureProvider.autoDispose.family<List<ChatMessage>, String>(
   (ref, conversationId) async {

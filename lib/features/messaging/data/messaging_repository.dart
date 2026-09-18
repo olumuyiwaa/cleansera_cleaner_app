@@ -21,6 +21,17 @@ class MessagingRepository {
     if (list.isEmpty) return null;
     return Conversation.fromJson(list.first as Map<String, dynamic>);
   }
+  /// List conversations (for a cleaner this is usually just one: them ↔ business)
+  Future<List<Conversation>> listConversations({int page = 1, int limit = 20}) async {
+    final res = await _dio.get(
+      ApiConstants.conversations,
+      queryParameters: {'page': page, 'limit': limit},
+    );
+    final list = unwrapListEnvelope(res.data);
+    return list
+        .map((e) => Conversation.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
 
   /// POST /messaging with no body is enough for a CLEANER caller — the
   /// backend ignores whatever subjectType/subjectId a cleaner sends and

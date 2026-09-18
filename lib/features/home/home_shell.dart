@@ -8,6 +8,7 @@ import '../../models/job.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/jobs_provider.dart';
 import '../jobs/presentation/job_card.dart';
+import '../messaging/presentation/messages_screen.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
@@ -29,6 +30,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         children: const [
           _TodayTab(),
           _ScheduleTab(),
+          MessagesScreen(),
           _ProfileTab(),
         ],
       ),
@@ -47,6 +49,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             label: 'Schedule',
           ),
           NavigationDestination(
+            icon: Icon(Icons.message_outlined),
+            selectedIcon: Icon(Icons.message),
+            label: 'Messages',
+          ),
+          NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person),
             label: 'Profile',
@@ -55,18 +62,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       ),
       appBar: AppBar(
         title: Text(
-          _index == 0
-              ? 'Today'
-              : _index == 1
-                  ? 'Schedule'
-                  : 'Profile',
+          _index == 0 ? 'Today' : _index == 1 ? 'Schedule' : _index == 2 ? 'Messages' : 'Profile',
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.forum_outlined),
-            tooltip: 'Messages',
-            onPressed: () => context.push('/home/messages'),
-          ),
           if (auth.profile?.businessName != null)
             Padding(
               padding: const EdgeInsets.only(right: 12),
