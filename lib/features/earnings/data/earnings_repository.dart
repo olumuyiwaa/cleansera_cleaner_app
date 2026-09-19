@@ -37,6 +37,8 @@ class CleanerPayoutEntry {
     required this.status,
     required this.createdAt,
     this.paidAt,
+    this.method,
+    this.reference,
   });
 
   final String id;
@@ -44,6 +46,9 @@ class CleanerPayoutEntry {
   final String status; // PENDING | PAID | CANCELED
   final DateTime createdAt;
   final DateTime? paidAt;
+  /// e.g. STRIPE, MANUAL_TRANSFER, CASH, BANK_TRANSFER
+  final String? method;
+  final String? reference;
 
   factory CleanerPayoutEntry.fromJson(Map<String, dynamic> json) {
     return CleanerPayoutEntry(
@@ -51,15 +56,32 @@ class CleanerPayoutEntry {
       totalCents: (json['totalCents'] as num).toInt(),
       status: json['status'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
-      paidAt: json['paidAt'] != null ? DateTime.parse(json['paidAt'] as String) : null,
+      paidAt:
+      json['paidAt'] != null ? DateTime.parse(json['paidAt'] as String) : null,
+      method: json['method'] as String?,
+      reference: json['reference'] as String?,
     );
+  }
+
+  String get methodLabel {
+    switch (method) {
+      case 'STRIPE':
+        return 'Stripe';
+      case 'MANUAL_TRANSFER':
+      case 'BANK_TRANSFER':
+        return 'Bank transfer';
+      case 'CASH':
+        return 'Cash';
+      case null:
+      case '':
+        return '—';
+      default:
+        return method!;
+    }
   }
 }
 
-/// Real payroll figures from the business's payout ledger — not an estimate
-/// computed from job prices. A cleaner only sees a number here once their
-/// business has set a pay rate for them (CleanerCompensation on the
-/// backend); until then pendingCents/lifetimePaidCents both read zero.
+/// Real payroll figures from the business's payout ledger.
 class EarningsSummary {
   const EarningsSummary({
     required this.pendingCents,
@@ -94,27 +116,32 @@ class EarningsSummary {
   }
 }
 
-/// Stripe Connect status for this cleaner's payout account. Mirrors the
-/// business-side Connect status shape used elsewhere in the platform, just
-/// resolved for the logged-in cleaner instead of a business.
+/// Stripe Connect status for this cleaner's payout account.
+/// Connecting is OPTIONAL — businesses can pay by bank transfer / cash.
 class StripeConnectStatus {
   const StripeConnectStatus({
     required this.connected,
     required this.chargesEnabled,
     required this.payoutsEnabled,
     required this.detailsSubmitted,
+    this.optional = true,
+    this.message,
   });
 
   final bool connected;
   final bool chargesEnabled;
   final bool payoutsEnabled;
   final bool detailsSubmitted;
+  /// Always true on CleanSera — Connect never blocks receiving pay.
+  final bool optional;
+  final String? message;
 
   static const empty = StripeConnectStatus(
     connected: false,
     chargesEnabled: false,
     payoutsEnabled: false,
     detailsSubmitted: false,
+    optional: true,
   );
 
   factory StripeConnectStatus.fromJson(Map<String, dynamic> json) {
@@ -123,6 +150,8 @@ class StripeConnectStatus {
       chargesEnabled: json['chargesEnabled'] as bool? ?? false,
       payoutsEnabled: json['payoutsEnabled'] as bool? ?? false,
       detailsSubmitted: json['detailsSubmitted'] as bool? ?? false,
+      optional: json['optional'] as bool? ?? true,
+      message: json['message'] as String?,
     );
   }
 }
@@ -142,8 +171,8 @@ class EarningsRepository {
     return StripeConnectStatus.fromJson(unwrapEnvelope(res.data));
   }
 
-  /// Starts (or resumes) Stripe Connect onboarding and returns the hosted
-  /// onboarding URL to open in an in-app browser / external browser tab.
+  /// Starts (or resumes) Stripe Connect onboarding. Optional — never required
+  /// to view earnings or get paid manually by the business.
   Future<String> fetchStripeOnboardingLink() async {
     final res = await _dio.post(ApiConstants.cleanerStripeOnboardingLink);
     final data = unwrapEnvelope(res.data);

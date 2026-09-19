@@ -7,11 +7,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../../providers/earnings_provider.dart';
 import '../data/earnings_repository.dart';
 
-/// Prompts the cleaner to connect a Stripe payout account when they haven't
-/// yet, so their business can pay them automatically instead of only ever
-/// recording a manual payout. Renders nothing once payoutsEnabled is true,
-/// and nothing while loading/on error — this is a nudge, not a blocker, so
-/// it should never get in the way of viewing existing earnings.
+/// Soft nudge to connect Stripe for automatic payouts.
+/// Never blocks viewing earnings — bank transfer / cash is fully supported.
 class _StripeConnectBanner extends ConsumerWidget {
   const _StripeConnectBanner();
 
@@ -25,39 +22,53 @@ class _StripeConnectBanner extends ConsumerWidget {
       data: (status) {
         if (status.payoutsEnabled) return const SizedBox.shrink();
 
-        final isResume = status.connected; // started but not finished onboarding
+        final isResume = status.connected;
         return Card(
           margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           color: AppColors.primary.withValues(alpha: 0.08),
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.account_balance_outlined, color: AppColors.primary),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isResume ? 'Finish connecting your payout account' : 'Connect your payout account',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.account_balance_outlined,
+                        color: AppColors.primary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isResume
+                                ? 'Finish connecting Stripe (optional)'
+                                : 'Get paid faster with Stripe (optional)',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            status.message ??
+                                'Your business can already pay you by bank transfer or cash. '
+                                    'Connect Stripe only if you want automatic deposits.',
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'So your business can pay you directly instead of only recording it manually.',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                TextButton(
-                  onPressed: () => _startOnboarding(context, ref),
-                  child: Text(isResume ? 'Resume' : 'Connect'),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => _startOnboarding(context, ref),
+                    child: Text(isResume ? 'Resume Stripe setup' : 'Connect Stripe'),
+                  ),
                 ),
               ],
             ),
@@ -75,12 +86,10 @@ class _StripeConnectBanner extends ConsumerWidget {
       final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!opened && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open the Stripe onboarding page')),
+          const SnackBar(
+              content: Text('Could not open the Stripe onboarding page')),
         );
       }
-      // Re-check status once the cleaner comes back to the app — Stripe's
-      // hosted flow has no in-app callback here, so this is a best-effort
-      // refresh rather than a guaranteed one; pulling to refresh always works.
       ref.invalidate(stripeConnectStatusProvider);
     } catch (e) {
       if (context.mounted) {
@@ -113,174 +122,201 @@ class EarningsScreen extends ConsumerWidget {
                 ref.invalidate(stripeConnectStatusProvider);
               },
               child: earningsAsync.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => ListView(
-                    children: [
-                      const SizedBox(height: 80),
-                      Center(
-                        child: TextButton(
-                          onPressed: () => ref.invalidate(earningsProvider),
-                          child: const Text('Could not load earnings — retry'),
-                        ),
+                loading: () =>
+                const Center(child: CircularProgressIndicator()),
+                error: (e, _) => ListView(
+                  children: [
+                    const SizedBox(height: 80),
+                    Center(
+                      child: TextButton(
+                        onPressed: () => ref.invalidate(earningsProvider),
+                        child: const Text('Could not load earnings — retry'),
                       ),
-                    ],
-                  ),
-                  data: (summary) {
-                    final hasAnyData = summary.pendingCents > 0 ||
-                        summary.lifetimePaidCents > 0 ||
-                        summary.recentEarnings.isNotEmpty;
+                    ),
+                  ],
+                ),
+                data: (summary) {
+                  final hasAnyData = summary.pendingCents > 0 ||
+                      summary.lifetimePaidCents > 0 ||
+                      summary.recentEarnings.isNotEmpty ||
+                      summary.recentPayouts.isNotEmpty;
 
-                    if (!hasAnyData) {
-                      return ListView(
-                        children: const [
-                          SizedBox(height: 100),
-                          Center(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 32),
-                              child: Column(
-                                children: [
-                                  Icon(Icons.payments_outlined,
-                                      size: 48, color: AppColors.textSecondary),
-                                  SizedBox(height: 12),
-                                  Text(
-                                    'No earnings yet',
-                                    style: TextStyle(fontWeight: FontWeight.w600),
-                                  ),
-                                  SizedBox(height: 6),
-                                  Text(
-                                    'Earnings show up here once your business sets a '
-                                    'pay rate for you and you complete a job.',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(color: AppColors.textSecondary),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    }
-
+                  if (!hasAnyData) {
                     return ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Card(
-                                color: AppColors.primary,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text('Pending',
-                                          style: TextStyle(color: Colors.white70)),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        currency.format(summary.pendingCents / 100),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                      children: const [
+                        SizedBox(height: 100),
+                        Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 32),
+                            child: Column(
+                              children: [
+                                Icon(Icons.payments_outlined,
+                                    size: 48, color: AppColors.textSecondary),
+                                SizedBox(height: 12),
+                                Text(
+                                  'No earnings yet',
+                                  style: TextStyle(fontWeight: FontWeight.w600),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Card(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text('Paid to date',
-                                          style:
-                                              TextStyle(color: AppColors.textSecondary)),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        currency.format(summary.lifetimePaidCents / 100),
-                                        style: const TextStyle(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.primary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                SizedBox(height: 6),
+                                Text(
+                                  'Earnings show up here once your business sets a '
+                                      'pay rate for you and you complete a job. '
+                                      'You do not need Stripe to get paid — '
+                                      'your employer can use bank transfer or cash.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: AppColors.textSecondary),
                                 ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        if (summary.recentPayouts.isNotEmpty) ...[
-                          Text(
-                            'Recent payouts',
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textSecondary,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          ...summary.recentPayouts.map(
-                            (p) => Card(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              child: ListTile(
-                                title: Text(currency.format(p.totalCents / 100)),
-                                subtitle: Text(
-                                  p.paidAt != null
-                                      ? 'Paid ${dateLabel.format(p.paidAt!)}'
-                                      : 'Created ${dateLabel.format(p.createdAt)}',
-                                ),
-                                trailing: Chip(
-                                  label: Text(p.status),
-                                  backgroundColor: p.status == 'PAID'
-                                      ? Colors.green.withValues(alpha: 0.15)
-                                      : Colors.orange.withValues(alpha: 0.15),
-                                  labelStyle: TextStyle(
-                                    color:
-                                        p.status == 'PAID' ? Colors.green : Colors.orange,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                        ],
-                        Text(
-                          'Recent jobs',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        ...summary.recentEarnings.map(
-                          (entry) => Card(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            child: ListTile(
-                              title: Text('Job ${dateLabel.format(entry.earnedAt)}'),
-                              subtitle: Text(entry.status),
-                              trailing: Text(
-                                currency.format(entry.amountCents / 100),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primary,
-                                ),
-                              ),
+                              ],
                             ),
                           ),
                         ),
                       ],
                     );
-                  },
-                ),
+                  }
+
+                  return ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Card(
+                              color: AppColors.primary,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Pending',
+                                        style:
+                                        TextStyle(color: Colors.white70)),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      currency
+                                          .format(summary.pendingCents / 100),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Card(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Paid to date',
+                                        style: TextStyle(
+                                            color: AppColors.textSecondary)),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      currency.format(
+                                          summary.lifetimePaidCents / 100),
+                                      style: const TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Your business pays you — often by bank transfer or cash. '
+                            'Stripe is optional for automatic deposits.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      if (summary.recentPayouts.isNotEmpty) ...[
+                        Text(
+                          'Recent payouts',
+                          style:
+                          Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ...summary.recentPayouts.map(
+                              (p) => Card(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            child: ListTile(
+                              title: Text(currency.format(p.totalCents / 100)),
+                              subtitle: Text(
+                                [
+                                  if (p.paidAt != null)
+                                    'Paid ${dateLabel.format(p.paidAt!)}'
+                                  else
+                                    'Created ${dateLabel.format(p.createdAt)}',
+                                  if (p.method != null && p.method!.isNotEmpty)
+                                    p.methodLabel,
+                                  if (p.reference != null &&
+                                      p.reference!.isNotEmpty)
+                                    'Ref ${p.reference}',
+                                ].join(' · '),
+                              ),
+                              trailing: Chip(
+                                label: Text(p.status),
+                                backgroundColor: p.status == 'PAID'
+                                    ? Colors.green.withValues(alpha: 0.15)
+                                    : Colors.orange.withValues(alpha: 0.15),
+                                labelStyle: TextStyle(
+                                  color: p.status == 'PAID'
+                                      ? Colors.green
+                                      : Colors.orange,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                      Text(
+                        'Recent jobs',
+                        style:
+                        Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...summary.recentEarnings.map(
+                            (entry) => Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: ListTile(
+                            title:
+                            Text('Job ${dateLabel.format(entry.earnedAt)}'),
+                            subtitle: Text(entry.status),
+                            trailing: Text(
+                              currency.format(entry.amountCents / 100),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         ],
