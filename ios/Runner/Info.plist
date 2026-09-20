@@ -66,5 +66,17 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- iOS terminates the app the first time it asks for camera or location
+	     without these strings, and App Review rejects the build. -->
+	<key>NSCameraUsageDescription</key>
+	<string>CleanSera uses the camera so you can take before and after photos of a job.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>CleanSera lets you attach existing photos of a job.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>CleanSera uses your location to confirm you have arrived at a job and to help your manager plan routes.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

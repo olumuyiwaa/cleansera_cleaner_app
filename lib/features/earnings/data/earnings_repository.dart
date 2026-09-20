@@ -46,7 +46,7 @@ class CleanerPayoutEntry {
   final String status; // PENDING | PAID | CANCELED
   final DateTime createdAt;
   final DateTime? paidAt;
-  /// e.g. STRIPE, MANUAL_TRANSFER, CASH, BANK_TRANSFER
+  /// e.g. STRIPE, MANUAL_TRANSFER, MANUAL_CASH, CASH, BANK_TRANSFER
   final String? method;
   final String? reference;
 
@@ -71,6 +71,7 @@ class CleanerPayoutEntry {
       case 'BANK_TRANSFER':
         return 'Bank transfer';
       case 'CASH':
+      case 'MANUAL_CASH':
         return 'Cash';
       case null:
       case '':
