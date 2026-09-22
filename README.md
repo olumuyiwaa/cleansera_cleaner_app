@@ -35,9 +35,12 @@ Backend: [cleansera_sass](https://github.com/olumuyiwaa/cleansera_sass)
 | **Offline queue** | Actions taken with no connectivity are queued and replayed once back online (`lib/providers/offline_queue_provider.dart`) |
 
 A cleaner's affiliation with a business is modeled explicitly
-(`lib/models/business_affiliation.dart`) — the data model supports a
-cleaner working for more than one business; a dedicated in-app switcher
-between them is not yet built.
+(`lib/models/business_affiliation.dart`). A cleaner working for more than
+one business can switch which one is active from the Profile tab or the
+app bar (`lib/widgets/business_switcher_sheet.dart`) — no re-login or
+password needed, since it reuses `POST /auth/select-business` on the
+still-valid access token. Switching does not currently warn or block if a
+job is clocked in on the business being left.
 
 ## Tech stack
 
