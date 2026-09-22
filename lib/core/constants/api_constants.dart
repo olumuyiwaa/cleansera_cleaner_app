@@ -10,6 +10,13 @@ class ApiConstants {
   static const String refresh = '/auth/refresh';
   static const String me = '/auth/me';
   static const String logout = '/auth/logout';
+  // Multi-business affiliation: list the workspaces this account can act
+  // within, and switch the active one mid-session without a full re-login
+  // (see cleansera_sass/src/modules/auth/auth.routes.js). Both require only
+  // the current access token — no password re-entry, unlike the picker
+  // shown during login itself.
+  static const String affiliations = '/auth/affiliations';
+  static const String selectBusiness = '/auth/select-business';
 
   static const String cleanerMe = '/cleaners/me';
   static const String cleanerAvailability = '/cleaners/me/availability';

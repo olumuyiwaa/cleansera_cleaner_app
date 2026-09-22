@@ -47,13 +47,53 @@ class AuthRepository {
       throw BusinessSelectionRequiredException(affiliations);
     }
 
+    return _applySession(data);
+  }
+
+  /// Lists the businesses this account can switch into as a cleaner.
+  /// Backing data for the in-app "switch business" picker; the login-time
+  /// picker uses the affiliations bundled in
+  /// [BusinessSelectionRequiredException] instead, since at that point
+  /// there's no access token yet to call this with.
+  ///
+  /// The backend's affiliations list also includes businesses where this
+  /// account is *staff* (a BusinessMember) rather than a cleaner — this app
+  /// has no screens for that role, and switching into one would trip
+  /// [_applyLoginResult]'s "no active cleaner profile" guard and sign the
+  /// person out entirely. Filtered out here so a staff-only business can
+  /// never even appear as an option.
+  Future<List<BusinessAffiliation>> fetchAffiliations() async {
+    final res = await _dio.get(ApiConstants.affiliations);
+    return unwrapListEnvelope(res.data)
+        .map((a) => BusinessAffiliation.fromJson(a as Map<String, dynamic>))
+        .where((a) => a.role == 'CLEANER')
+        .toList();
+  }
+
+  /// Switches the active workspace for an already-authenticated user — the
+  /// mid-session equivalent of picking a business during login, but without
+  /// asking for the password again. Overwrites the stored session in place,
+  /// same as [login]; the new tokens are scoped to [businessId] from this
+  /// point on, so every subsequent request lands in that business's data.
+  Future<({User user, CleanerProfile? profile, String access, String refresh})>
+      switchBusiness(String businessId) async {
+    final res = await _dio.post(
+      ApiConstants.selectBusiness,
+      data: {'businessId': businessId},
+    );
+    final data = unwrapEnvelope(res.data);
+    return _applySession(data);
+  }
+
+  /// Shared by [login] and [switchBusiness] — both endpoints return the same
+  /// `{ accessToken, refreshToken, user, cleanerProfile }` shape (see
+  /// issueSession in cleansera_sass/src/modules/auth/auth.service.js), and
+  /// both need it persisted to storage the same way.
+  Future<({User user, CleanerProfile? profile, String access, String refresh})>
+      _applySession(Map<String, dynamic> data) async {
     final access = data['accessToken'] as String;
     final refresh = data['refreshToken'] as String;
 
-    // Login now returns `user` (and, for a cleaner account, `cleanerProfile`)
-    // directly — no separate round-trip needed for the common case. Still
-    // fall back to a dedicated fetch if either is ever missing, so an older
-    // backend build doesn't break the app outright.
     User user;
     if (data['user'] is Map<String, dynamic>) {
       user = User.fromJson(data['user'] as Map<String, dynamic>);
@@ -70,9 +110,9 @@ class AuthRepository {
       profile = CleanerProfile.fromJson(
           data['cleanerProfile'] as Map<String, dynamic>);
     } else {
-      // Not every login is a cleaner (or the backend didn't include it) —
-      // fetch the dedicated cleaner profile; absence here just means this
-      // account isn't an active cleaner anywhere, which the caller handles.
+      // Not every workspace is one this account cleans for (it might only be
+      // staff there) — absence here just means no active cleaner profile in
+      // the just-selected business, which the caller handles.
       try {
         final me = await _dio.get(
           ApiConstants.cleanerMe,
@@ -88,11 +128,16 @@ class AuthRepository {
     await _storage.write(key: AppConstants.storageRefreshToken, value: refresh);
     await _storage.write(
         key: AppConstants.storageUser, value: jsonEncode(user.toJson()));
+    // Overwrite unconditionally — including clearing a stale profile from
+    // the previous business when the newly-selected one has none, so the
+    // cached copy never leaks across a switch.
     if (profile != null) {
       await _storage.write(
         key: AppConstants.storageCleanerProfile,
         value: jsonEncode(profile.toJson()),
       );
+    } else {
+      await _storage.delete(key: AppConstants.storageCleanerProfile);
     }
 
     return (user: user, profile: profile, access: access, refresh: refresh);

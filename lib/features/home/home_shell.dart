@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/job.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/jobs_provider.dart';
+import '../../widgets/business_switcher_sheet.dart';
 import '../jobs/presentation/job_card.dart';
 import '../messaging/presentation/messages_screen.dart';
 
@@ -67,13 +68,29 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         actions: [
           if (auth.profile?.businessName != null)
             Padding(
-              padding: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.only(right: 4),
               child: Center(
-                child: Text(
-                  auth.profile!.businessName!,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => showBusinessSwitcherSheet(context),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          auth.profile!.businessName!,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        const Icon(Icons.unfold_more,
+                            size: 14, color: AppColors.textSecondary),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -389,6 +406,16 @@ class _ProfileTab extends ConsumerWidget {
                 onTap: () => context.push('/home/profile/earnings'),
               ),
             ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.swap_horiz, color: AppColors.primary),
+            title: const Text('Switch business'),
+            subtitle: const Text('For cleaners working with more than one business'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => showBusinessSwitcherSheet(context),
           ),
         ),
         const SizedBox(height: 24),

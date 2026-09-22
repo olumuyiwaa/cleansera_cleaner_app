@@ -162,6 +162,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(clearPendingAffiliations: true);
   }
 
+  /// Switches to a different business mid-session — for a cleaner who works
+  /// for more than one, from the "switch business" picker (see
+  /// business_switcher_sheet.dart), not the login-time one above. No
+  /// password needed: this reuses the still-valid access token to call
+  /// POST /auth/select-business, which re-issues tokens scoped to the new
+  /// business.
+  ///
+  /// Every screen that reads today's/upcoming jobs watches [authProvider]
+  /// itself, so replacing [state] below already refreshes those. Messaging,
+  /// profile, availability, documents, and earnings providers don't watch
+  /// [authProvider] — the caller (business_switcher_sheet.dart) is
+  /// responsible for invalidating those on success, so this notifier
+  /// doesn't need to import every feature's providers just to switch a
+  /// business.
+  Future<bool> switchBusiness(String businessId) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final result = await _repo.switchBusiness(businessId);
+      return _applyLoginResult(result);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: _mapError(e));
+      return false;
+    }
+  }
+
   bool _applyLoginResult(
     ({User user, CleanerProfile? profile, String access, String refresh}) result,
   ) {
@@ -215,4 +240,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
 final authProvider =
     StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier(ref.watch(authRepositoryProvider));
+});
+
+/// Every workspace the signed-in account can switch into — feeds the
+/// "switch business" picker. Re-fetch with `ref.invalidate` after a switch
+/// succeeds so a business the account just lost access to (e.g. offboarded
+/// mid-session elsewhere) drops out of the list next time it's opened.
+final affiliationsProvider =
+    FutureProvider.autoDispose<List<BusinessAffiliation>>((ref) async {
+  final repo = ref.watch(authRepositoryProvider);
+  return repo.fetchAffiliations();
 });
