@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../models/cleaner_document.dart';
 import '../../../providers/profile_provider.dart';
 import '../data/profile_repository.dart';
@@ -17,13 +18,14 @@ class DocumentsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final documentsAsync = ref.watch(documentsProvider);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Documents')),
+      appBar: AppBar(title: Text(l10n.documentsTitle)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showUploadSheet(context, ref),
         icon: const Icon(Icons.add),
-        label: const Text('Add document'),
+        label: Text(l10n.addDocument),
       ),
       body: documentsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -31,10 +33,10 @@ class DocumentsScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('Failed to load documents'),
+              Text(l10n.failedToLoadDocuments),
               TextButton(
                 onPressed: () => ref.invalidate(documentsProvider),
-                child: const Text('Retry'),
+                child: Text(l10n.retry),
               ),
             ],
           ),
@@ -43,7 +45,7 @@ class DocumentsScreen extends ConsumerWidget {
           if (docs.isEmpty) {
             return Center(
               child: Text(
-                'No documents yet.\nTap "Add document" to upload your ID, a\ncertification, or proof of insurance.',
+                l10n.noDocumentsYet,
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppColors.textSecondary),
               ),
@@ -85,7 +87,7 @@ class _DocumentTile extends ConsumerWidget {
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open document')),
+          SnackBar(content: Text(AppLocalizations.of(context).couldNotOpenDocument)),
         );
       }
     }
@@ -93,15 +95,16 @@ class _DocumentTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dateFmt = DateFormat('MMM d, yyyy');
+    final l10n = AppLocalizations.of(context);
+    final dateFmt = DateFormat('MMM d, yyyy', l10n.localeName);
     Color statusColor = AppColors.textSecondary;
     String? statusLabel;
     if (document.isExpired) {
       statusColor = AppColors.error;
-      statusLabel = 'Expired';
+      statusLabel = l10n.docExpired;
     } else if (document.isExpiringSoon) {
       statusColor = AppColors.warning;
-      statusLabel = 'Expiring soon';
+      statusLabel = l10n.docExpiringSoon;
     }
 
     return Card(
@@ -111,9 +114,9 @@ class _DocumentTile extends ConsumerWidget {
         title: Text(document.title),
         subtitle: Text(
           [
-            docTypeLabel(document.type),
+            docTypeLabel(document.type, l10n),
             if (document.expiresAt != null)
-              'Expires ${dateFmt.format(document.expiresAt!)}',
+              l10n.expiresOn(dateFmt.format(document.expiresAt!)),
           ].join(' · '),
         ),
         trailing: statusLabel != null
@@ -171,9 +174,10 @@ class _UploadDocumentSheetState extends ConsumerState<_UploadDocumentSheet> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context);
     if (_file == null || _titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add a title and a photo of the document')),
+        SnackBar(content: Text(l10n.addTitleAndPhoto)),
       );
       return;
     }
@@ -188,7 +192,7 @@ class _UploadDocumentSheetState extends ConsumerState<_UploadDocumentSheet> {
       Navigator.of(context).pop();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Upload failed. Try again.')),
+        SnackBar(content: Text(l10n.uploadFailed)),
       );
     }
   }
@@ -197,6 +201,7 @@ class _UploadDocumentSheetState extends ConsumerState<_UploadDocumentSheet> {
   Widget build(BuildContext context) {
     final actionsState = ref.watch(profileActionsProvider);
     final busy = actionsState.isLoading;
+    final l10n = AppLocalizations.of(context);
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -209,39 +214,39 @@ class _UploadDocumentSheetState extends ConsumerState<_UploadDocumentSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Add document', style: Theme.of(context).textTheme.titleLarge),
+          Text(l10n.addDocument, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
             value: _type,
-            decoration: const InputDecoration(labelText: 'Type', border: OutlineInputBorder()),
+            decoration: InputDecoration(labelText: l10n.type, border: const OutlineInputBorder()),
             items: selfServiceDocTypes
-                .map((t) => DropdownMenuItem(value: t, child: Text(docTypeLabel(t))))
+                .map((t) => DropdownMenuItem(value: t, child: Text(docTypeLabel(t, l10n))))
                 .toList(),
             onChanged: (v) => setState(() => _type = v ?? _type),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _titleController,
-            decoration: const InputDecoration(labelText: 'Title', border: OutlineInputBorder()),
+            decoration: InputDecoration(labelText: l10n.titleLabel, border: const OutlineInputBorder()),
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: _pickExpiry,
             icon: const Icon(Icons.event_outlined),
             label: Text(_expiresAt == null
-                ? 'Set expiry date (optional)'
-                : 'Expires ${DateFormat('MMM d, yyyy').format(_expiresAt!)}'),
+                ? l10n.setExpiryDateOptional
+                : l10n.expiresOn(DateFormat('MMM d, yyyy', l10n.localeName).format(_expiresAt!))),
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: _pickFile,
             icon: const Icon(Icons.camera_alt_outlined),
-            label: Text(_file == null ? 'Take or choose a photo' : 'Photo selected'),
+            label: Text(_file == null ? l10n.takeOrChoosePhoto : l10n.photoSelected),
           ),
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: busy ? null : _submit,
-            child: Text(busy ? 'Uploading…' : 'Upload'),
+            child: Text(busy ? l10n.uploading : l10n.upload),
           ),
         ],
       ),

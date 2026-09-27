@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../models/message.dart';
 import '../../../providers/messaging_provider.dart';
 import '../data/messaging_repository.dart';
@@ -13,6 +14,7 @@ class MessagesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final conversationsAsync = ref.watch(conversationsProvider);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: conversationsAsync.when(
@@ -23,10 +25,10 @@ class MessagesScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, size: 48, color: AppColors.error),
               const SizedBox(height: 12),
-              const Text('Could not load messages'),
+              Text(l10n.couldNotLoadMessages),
               TextButton(
                 onPressed: () => ref.invalidate(conversationsProvider),
-                child: const Text('Retry'),
+                child: Text(l10n.retry),
               ),
             ],
           ),
@@ -39,7 +41,7 @@ class MessagesScreen extends ConsumerWidget {
                 children: [
                   const Icon(Icons.forum_outlined, size: 48, color: AppColors.textSecondary),
                   const SizedBox(height: 12),
-                  const Text('No conversations yet'),
+                  Text(l10n.noConversationsYet),
                   const SizedBox(height: 16),
                   FilledButton(
                     onPressed: () async {
@@ -53,7 +55,7 @@ class MessagesScreen extends ConsumerWidget {
                       );
                       ref.invalidate(conversationsProvider);
                     },
-                    child: const Text('Message your business'),
+                    child: Text(l10n.messageYourBusiness),
                   ),
                 ],
               ),
@@ -68,10 +70,10 @@ class MessagesScreen extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final c = conversations[index];
                 final last = c.lastMessage;
-                final title = c.lastMessage?.sender?.fullName ?? 'Business';
+                final title = c.lastMessage?.sender?.fullName ?? l10n.businessFallbackName;
                 final preview = last?.body?.trim().isNotEmpty == true
                     ? last!.body!
-                    : (last?.attachmentKey != null ? 'Attachment' : 'No messages yet');
+                    : (last?.attachmentKey != null ? l10n.attachment : l10n.noMessagesYet);
                 final time = last?.createdAt;
 
                 return Padding(padding: EdgeInsetsGeometry.all(8),child: ListTile(
@@ -82,7 +84,7 @@ class MessagesScreen extends ConsumerWidget {
                   title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
                   subtitle: Text(preview, maxLines: 1, overflow: TextOverflow.ellipsis),
                   trailing: Text(
-                    timeago.format(time!),
+                    timeago.format(time!, locale: l10n.localeName),
                     style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(8)),
@@ -139,7 +141,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
       _scrollToBottom();
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Message failed to send — try again')),
+        SnackBar(content: Text(AppLocalizations.of(context).messageFailedToSend)),
       );
     }
   }
@@ -159,9 +161,10 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   Widget build(BuildContext context) {
     final currentUserId = ref.watch(currentUserIdProvider);
     final messagesAsync = ref.watch(messagesProvider(widget.conversationId));
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Conversation details')),
+      appBar: AppBar(title: Text(l10n.conversationDetailsTitle)),
       body: Column(
       children: [
         Expanded(
@@ -177,7 +180,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                     child: TextButton(
                       onPressed: () => ref
                           .invalidate(messagesProvider(widget.conversationId)),
-                      child: const Text('Could not load messages — retry'),
+                      child: Text(l10n.couldNotLoadMessagesRetry),
                     ),
                   ),
                 ],
@@ -185,19 +188,19 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
               data: (messages) {
                 if (messages.isEmpty) {
                   return ListView(
-                    children: const [
-                      SizedBox(height: 100),
+                    children: [
+                      const SizedBox(height: 100),
                       Center(
                         child: Column(
                           children: [
-                            Icon(Icons.forum_outlined,
+                            const Icon(Icons.forum_outlined,
                                 size: 48, color: AppColors.textSecondary),
-                            SizedBox(height: 12),
-                            Text('No messages yet'),
-                            SizedBox(height: 4),
+                            const SizedBox(height: 12),
+                            Text(l10n.noMessagesYet),
+                            const SizedBox(height: 4),
                             Text(
-                              'Send a message to your business below',
-                              style: TextStyle(color: AppColors.textSecondary),
+                              l10n.sendMessageBelow,
+                              style: const TextStyle(color: AppColors.textSecondary),
                             ),
                           ],
                         ),
@@ -235,7 +238,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                     maxLines: 4,
                     textCapitalization: TextCapitalization.sentences,
                     decoration: InputDecoration(
-                      hintText: 'Message your business…',
+                      hintText: l10n.messageYourBusinessHint,
                       filled: true,
                       fillColor: AppColors.background,
                       contentPadding: const EdgeInsets.symmetric(
@@ -284,6 +287,7 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final bubbleColor = mine ? AppColors.primary : AppColors.surface;
     final textColor = mine ? Colors.white : AppColors.textPrimary;
 
@@ -322,7 +326,7 @@ class _MessageBubble extends StatelessWidget {
                         color: mine ? Colors.white70 : AppColors.textSecondary),
                     const SizedBox(width: 4),
                     Text(
-                      'Attachment',
+                      l10n.attachment,
                       style: TextStyle(
                         fontSize: 12,
                         color:
@@ -334,7 +338,7 @@ class _MessageBubble extends StatelessWidget {
               ),
             const SizedBox(height: 2),
             Text(
-              timeago.format(message.createdAt),
+              timeago.format(message.createdAt, locale: l10n.localeName),
               style: TextStyle(
                 fontSize: 11,
                 color: mine ? Colors.white70 : AppColors.textSecondary,

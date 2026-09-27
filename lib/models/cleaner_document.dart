@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../l10n/generated/app_localizations.dart';
+
 class CleanerDocument extends Equatable {
   const CleanerDocument({
     required this.id,
@@ -64,19 +66,23 @@ const List<String> selfServiceDocTypes = [
   'OTHER',
 ];
 
-String docTypeLabel(String type) {
+/// `l10n` must be `AppLocalizations.of(context)` — same pattern as
+/// statusLabel in job_card.dart. Kept as a plain function (not a widget
+/// method) so it can be called from anywhere a BuildContext is available,
+/// including inside DropdownMenuItem builders.
+String docTypeLabel(String type, AppLocalizations l10n) {
   switch (type) {
     case 'ID_CARD':
-      return 'ID card';
+      return l10n.docTypeIdCard;
     case 'CERTIFICATION':
-      return 'Certification';
+      return l10n.docTypeCertification;
     case 'INSURANCE':
-      return 'Insurance';
+      return l10n.docTypeInsurance;
     case 'BACKGROUND_CHECK':
-      return 'Background check';
+      return l10n.docTypeBackgroundCheck;
     case 'CONTRACT':
-      return 'Contract';
+      return l10n.docTypeContract;
     default:
-      return 'Other';
+      return l10n.docTypeOther;
   }
 }

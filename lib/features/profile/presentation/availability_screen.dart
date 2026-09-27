@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../models/availability_slot.dart';
 import '../../../providers/profile_provider.dart';
 
@@ -11,19 +12,20 @@ class AvailabilityScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final availabilityAsync = ref.watch(availabilityProvider);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Availability')),
+      appBar: AppBar(title: Text(l10n.availabilityTitle)),
       body: availabilityAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('Failed to load availability'),
+              Text(l10n.failedToLoadAvailability),
               TextButton(
                 onPressed: () => ref.invalidate(availabilityProvider),
-                child: const Text('Retry'),
+                child: Text(l10n.retry),
               ),
             ],
           ),
@@ -101,21 +103,47 @@ class _AvailabilityEditorState extends ConsumerState<_AvailabilityEditor> {
   }
 
   Future<void> _save() async {
+    final l10n = AppLocalizations.of(context);
     final ok = await ref
         .read(profileActionsProvider.notifier)
         .updateAvailability(_slots);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? 'Availability saved' : 'Could not save. Try again.'),
+        content: Text(ok ? l10n.availabilitySaved : l10n.availabilitySaveFailed),
       ),
     );
+  }
+
+  /// weekdayLabels (models/availability_slot.dart) is a hardcoded English
+  /// const list — fine as a fallback/reference, but not locale-aware, so
+  /// this screen (its only usage site) reads day names from l10n instead.
+  String _weekdayLabel(AppLocalizations l10n, int day) {
+    switch (day) {
+      case 1:
+        return l10n.monday;
+      case 2:
+        return l10n.tuesday;
+      case 3:
+        return l10n.wednesday;
+      case 4:
+        return l10n.thursday;
+      case 5:
+        return l10n.friday;
+      case 6:
+        return l10n.saturday;
+      case 7:
+        return l10n.sunday;
+      default:
+        return '';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final actionsState = ref.watch(profileActionsProvider);
     final busy = actionsState.isLoading;
+    final l10n = AppLocalizations.of(context);
 
     return Column(
       children: [
@@ -128,7 +156,7 @@ class _AvailabilityEditorState extends ConsumerState<_AvailabilityEditor> {
                   children: [
                     Expanded(
                       child: Text(
-                        weekdayLabels[day],
+                        _weekdayLabel(l10n, day),
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
@@ -144,7 +172,7 @@ class _AvailabilityEditorState extends ConsumerState<_AvailabilityEditor> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Text(
-                      'Not available',
+                      l10n.notAvailable,
                       style: TextStyle(color: AppColors.textSecondary),
                     ),
                   )
@@ -185,7 +213,7 @@ class _AvailabilityEditorState extends ConsumerState<_AvailabilityEditor> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: ElevatedButton(
               onPressed: busy ? null : _save,
-              child: Text(busy ? 'Saving…' : 'Save availability'),
+              child: Text(busy ? l10n.saving : l10n.saveAvailability),
             ),
           ),
         ),

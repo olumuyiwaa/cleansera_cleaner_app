@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../models/job.dart';
 import '../../../providers/jobs_provider.dart';
 
@@ -42,7 +43,7 @@ class _JobPhotosSectionState extends ConsumerState<JobPhotosSection> {
           );
       if (!ok && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Photo upload failed — check your connection and try again.')),
+          SnackBar(content: Text(AppLocalizations.of(context).photoUploadFailed)),
         );
       }
     } finally {
@@ -52,6 +53,7 @@ class _JobPhotosSectionState extends ConsumerState<JobPhotosSection> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final before = widget.job.photos.where((p) => p.stage == 'BEFORE').toList();
     final after = widget.job.photos.where((p) => p.stage == 'AFTER').toList();
 
@@ -62,24 +64,24 @@ class _JobPhotosSectionState extends ConsumerState<JobPhotosSection> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Photo proof',
+              l10n.photoProofTitle,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 4),
             Text(
-              'Add at least one after-photo before you can mark this job complete.',
+              l10n.photoProofDescription,
               style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),
             const SizedBox(height: 12),
             _StageRow(
-              label: 'Before',
+              label: l10n.photoStageBefore,
               count: before.length,
               busy: _capturing,
               onAdd: () => _capture('BEFORE'),
             ),
             const SizedBox(height: 8),
             _StageRow(
-              label: 'After',
+              label: l10n.photoStageAfter,
               count: after.length,
               required: true,
               busy: _capturing,
@@ -109,6 +111,7 @@ class _StageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final satisfied = !required || count > 0;
     return Row(
       children: [
@@ -120,14 +123,16 @@ class _StageRow extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: Text(
-            count == 0 ? '$label photo' : '$label photo · $count added',
+            count == 0
+                ? l10n.photoStageNoneAdded(label)
+                : l10n.photoStageSomeAdded(label, count),
             style: const TextStyle(fontSize: 14),
           ),
         ),
         TextButton.icon(
           onPressed: busy ? null : onAdd,
           icon: const Icon(Icons.camera_alt_outlined, size: 18),
-          label: Text(count == 0 ? 'Add' : 'Add another'),
+          label: Text(count == 0 ? l10n.add : l10n.addAnother),
         ),
       ],
     );

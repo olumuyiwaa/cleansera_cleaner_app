@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../providers/earnings_provider.dart';
 import '../data/earnings_repository.dart';
 
@@ -15,6 +16,7 @@ class _StripeConnectBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statusAsync = ref.watch(stripeConnectStatusProvider);
+    final l10n = AppLocalizations.of(context);
 
     return statusAsync.when(
       loading: () => const SizedBox.shrink(),
@@ -43,15 +45,13 @@ class _StripeConnectBanner extends ConsumerWidget {
                         children: [
                           Text(
                             isResume
-                                ? 'Finish connecting Stripe (optional)'
-                                : 'Get paid faster with Stripe (optional)',
+                                ? l10n.finishConnectingStripe
+                                : l10n.getPaidFasterWithStripe,
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            status.message ??
-                                'Your business can already pay you by bank transfer or cash. '
-                                    'Connect Stripe only if you want automatic deposits.',
+                            status.message ?? l10n.stripeOptionalExplanation,
                             style: const TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 12,
@@ -67,7 +67,7 @@ class _StripeConnectBanner extends ConsumerWidget {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () => _startOnboarding(context, ref),
-                    child: Text(isResume ? 'Resume Stripe setup' : 'Connect Stripe'),
+                    child: Text(isResume ? l10n.resumeStripeSetup : l10n.connectStripe),
                   ),
                 ),
               ],
@@ -79,6 +79,7 @@ class _StripeConnectBanner extends ConsumerWidget {
   }
 
   Future<void> _startOnboarding(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
     try {
       final repo = ref.read(earningsRepositoryProvider);
       final url = await repo.fetchStripeOnboardingLink();
@@ -86,15 +87,14 @@ class _StripeConnectBanner extends ConsumerWidget {
       final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!opened && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Could not open the Stripe onboarding page')),
+          SnackBar(content: Text(l10n.couldNotOpenStripeOnboarding)),
         );
       }
       ref.invalidate(stripeConnectStatusProvider);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not start onboarding: $e')),
+          SnackBar(content: Text(l10n.couldNotStartOnboarding(e.toString()))),
         );
       }
     }
@@ -107,11 +107,12 @@ class EarningsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final earningsAsync = ref.watch(earningsProvider);
-    final currency = NumberFormat.simpleCurrency();
-    final dateLabel = DateFormat('MMM d');
+    final l10n = AppLocalizations.of(context);
+    final currency = NumberFormat.simpleCurrency(locale: l10n.localeName);
+    final dateLabel = DateFormat('MMM d', l10n.localeName);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Earnings')),
+      appBar: AppBar(title: Text(l10n.earningsTitle)),
       body: Column(
         children: [
           const _StripeConnectBanner(),
@@ -130,7 +131,7 @@ class EarningsScreen extends ConsumerWidget {
                     Center(
                       child: TextButton(
                         onPressed: () => ref.invalidate(earningsProvider),
-                        child: const Text('Could not load earnings — retry'),
+                        child: Text(l10n.couldNotLoadEarningsRetry),
                       ),
                     ),
                   ],
@@ -143,28 +144,25 @@ class EarningsScreen extends ConsumerWidget {
 
                   if (!hasAnyData) {
                     return ListView(
-                      children: const [
-                        SizedBox(height: 100),
+                      children: [
+                        const SizedBox(height: 100),
                         Center(
                           child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 32),
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
                             child: Column(
                               children: [
-                                Icon(Icons.payments_outlined,
+                                const Icon(Icons.payments_outlined,
                                     size: 48, color: AppColors.textSecondary),
-                                SizedBox(height: 12),
+                                const SizedBox(height: 12),
                                 Text(
-                                  'No earnings yet',
-                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                  l10n.noEarningsYet,
+                                  style: const TextStyle(fontWeight: FontWeight.w600),
                                 ),
-                                SizedBox(height: 6),
+                                const SizedBox(height: 6),
                                 Text(
-                                  'Earnings show up here once your business sets a '
-                                      'pay rate for you and you complete a job. '
-                                      'You do not need Stripe to get paid — '
-                                      'your employer can use bank transfer or cash.',
+                                  l10n.noEarningsExplanation,
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(color: AppColors.textSecondary),
+                                  style: const TextStyle(color: AppColors.textSecondary),
                                 ),
                               ],
                             ),
@@ -187,9 +185,9 @@ class EarningsScreen extends ConsumerWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('Pending',
+                                    Text(l10n.pending,
                                         style:
-                                        TextStyle(color: Colors.white70)),
+                                        const TextStyle(color: Colors.white70)),
                                     const SizedBox(height: 6),
                                     Text(
                                       currency
@@ -213,8 +211,8 @@ class EarningsScreen extends ConsumerWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('Paid to date',
-                                        style: TextStyle(
+                                    Text(l10n.paidToDate,
+                                        style: const TextStyle(
                                             color: AppColors.textSecondary)),
                                     const SizedBox(height: 6),
                                     Text(
@@ -235,8 +233,7 @@ class EarningsScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Your business pays you — often by bank transfer or cash. '
-                            'Stripe is optional for automatic deposits.',
+                        l10n.businessPaysYouExplanation,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -244,7 +241,7 @@ class EarningsScreen extends ConsumerWidget {
                       const SizedBox(height: 20),
                       if (summary.recentPayouts.isNotEmpty) ...[
                         Text(
-                          'Recent payouts',
+                          l10n.recentPayouts,
                           style:
                           Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
@@ -260,18 +257,18 @@ class EarningsScreen extends ConsumerWidget {
                               subtitle: Text(
                                 [
                                   if (p.paidAt != null)
-                                    'Paid ${dateLabel.format(p.paidAt!)}'
+                                    l10n.paidOn(dateLabel.format(p.paidAt!))
                                   else
-                                    'Created ${dateLabel.format(p.createdAt)}',
+                                    l10n.createdOn(dateLabel.format(p.createdAt)),
                                   if (p.method != null && p.method!.isNotEmpty)
-                                    p.methodLabel,
+                                    p.methodLabel(l10n),
                                   if (p.reference != null &&
                                       p.reference!.isNotEmpty)
-                                    'Ref ${p.reference}',
+                                    l10n.refNumber(p.reference!),
                                 ].join(' · '),
                               ),
                               trailing: Chip(
-                                label: Text(p.status),
+                                label: Text(p.statusLabel(l10n)),
                                 backgroundColor: p.status == 'PAID'
                                     ? Colors.green.withValues(alpha: 0.15)
                                     : Colors.orange.withValues(alpha: 0.15),
@@ -288,7 +285,7 @@ class EarningsScreen extends ConsumerWidget {
                         const SizedBox(height: 20),
                       ],
                       Text(
-                        'Recent jobs',
+                        l10n.recentJobs,
                         style:
                         Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
@@ -301,8 +298,8 @@ class EarningsScreen extends ConsumerWidget {
                           margin: const EdgeInsets.only(bottom: 8),
                           child: ListTile(
                             title:
-                            Text('Job ${dateLabel.format(entry.earnedAt)}'),
-                            subtitle: Text(entry.status),
+                            Text(l10n.jobOn(dateLabel.format(entry.earnedAt))),
+                            subtitle: Text(entry.statusLabel(l10n)),
                             trailing: Text(
                               currency.format(entry.amountCents / 100),
                               style: const TextStyle(

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../models/cleaner_profile.dart';
 import '../../../providers/profile_provider.dart';
 
@@ -16,19 +17,20 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(cleanerProfileProvider);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit profile')),
+      appBar: AppBar(title: Text(l10n.editProfileTitle)),
       body: profileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('Failed to load profile'),
+              Text(l10n.failedToLoadProfile),
               TextButton(
                 onPressed: () => ref.invalidate(cleanerProfileProvider),
-                child: const Text('Retry'),
+                child: Text(l10n.retry),
               ),
             ],
           ),
@@ -77,6 +79,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   }
 
   Future<void> _save() async {
+    final l10n = AppLocalizations.of(context);
     final ok = await ref.read(profileActionsProvider.notifier).updateProfile(
           phone: _phoneController.text.trim(),
           avatarFile: _pendingAvatar,
@@ -85,11 +88,11 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     if (ok) {
       setState(() => _pendingAvatar = null);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated')),
+        SnackBar(content: Text(l10n.profileUpdated)),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not update profile. Try again.')),
+        SnackBar(content: Text(l10n.profileUpdateFailed)),
       );
     }
   }
@@ -100,6 +103,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     final user = profile.user;
     final actionsState = ref.watch(profileActionsProvider);
     final busy = actionsState.isLoading;
+    final l10n = AppLocalizations.of(context);
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -141,25 +145,25 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
           ),
         ),
         const SizedBox(height: 24),
-        _ReadOnlyField(label: 'Name', value: user?.fullName ?? '—'),
+        _ReadOnlyField(label: l10n.name, value: user?.fullName ?? '—'),
         const SizedBox(height: 12),
-        _ReadOnlyField(label: 'Email', value: user?.email ?? '—'),
+        _ReadOnlyField(label: l10n.email, value: user?.email ?? '—'),
         const SizedBox(height: 12),
-        _ReadOnlyField(label: 'Business', value: profile.businessName ?? '—'),
+        _ReadOnlyField(label: l10n.business, value: profile.businessName ?? '—'),
         const SizedBox(height: 20),
-        Text('Phone', style: Theme.of(context).textTheme.labelLarge),
+        Text(l10n.phone, style: Theme.of(context).textTheme.labelLarge),
         const SizedBox(height: 6),
         TextField(
           controller: _phoneController,
           keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            hintText: 'e.g. +1 555 123 4567',
+          decoration: InputDecoration(
+            border: const OutlineInputBorder(),
+            hintText: l10n.phoneHint,
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Name and email are managed by your business — contact them to change these.',
+          l10n.nameEmailManagedByBusiness,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -167,21 +171,21 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
         const SizedBox(height: 24),
         ElevatedButton(
           onPressed: busy ? null : _save,
-          child: Text(busy ? 'Saving…' : 'Save changes'),
+          child: Text(busy ? l10n.saving : l10n.saveChanges),
         ),
         const SizedBox(height: 24),
         const Divider(),
         ListTile(
           leading: const Icon(Icons.calendar_month_outlined, color: AppColors.primary),
-          title: const Text('Availability'),
-          subtitle: const Text('Set the hours you can be booked'),
+          title: Text(l10n.availabilityTitle),
+          subtitle: Text(l10n.availabilitySubtitle),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => context.push('/home/profile/availability'),
         ),
         ListTile(
           leading: const Icon(Icons.folder_outlined, color: AppColors.primary),
-          title: const Text('Documents'),
-          subtitle: const Text('ID, certifications, and insurance'),
+          title: Text(l10n.documentsTitle),
+          subtitle: Text(l10n.documentsSubtitle),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => context.push('/home/profile/documents'),
         ),

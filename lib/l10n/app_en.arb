@@ -1,0 +1,225 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "CleanSera Cleaner",
+  "retry": "Retry",
+  "working": "Working…",
+  "saving": "Saving…",
+  "uploading": "Uploading…",
+
+  "signInSubtitle": "Sign in with the account your business created for you",
+  "email": "Email",
+  "phone": "Phone",
+  "emailRequired": "Email required",
+  "emailInvalid": "Enter a valid email",
+  "password": "Password",
+  "passwordRequired": "Password required",
+  "signIn": "Sign in",
+  "troubleSigningIn": "Having trouble? Contact your cleaning business admin.",
+  "chooseABusiness": "Choose a business",
+  "multipleBusinessesPrompt": "You work with more than one cleaning business on CleanSera. Which one do you want to sign into?",
+
+  "tabToday": "Today",
+  "tabSchedule": "Schedule",
+  "tabMessages": "Messages",
+  "tabProfile": "Profile",
+
+  "couldNotLoadJobs": "Could not load jobs",
+  "jobsTodayCount": "{count, plural, one {# job today} other {# jobs today}}",
+  "@jobsTodayCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "sectionInProgress": "In progress",
+  "sectionUpcoming": "Upcoming",
+  "sectionCompletedCancelled": "Completed / cancelled",
+  "noJobsScheduledToday": "No jobs scheduled for today",
+  "noUpcomingJobs": "No upcoming jobs",
+
+  "status": "Status",
+  "notSet": "Not set",
+  "cleanerFallbackName": "Cleaner",
+  "editProfileTitle": "Edit profile",
+  "photoAndPhoneNumber": "Photo and phone number",
+  "availabilityTitle": "Availability",
+  "availabilitySubtitle": "Set the hours you can be booked",
+  "documentsTitle": "Documents",
+  "documentsSubtitle": "ID, certifications, and insurance",
+  "earningsTitle": "Earnings",
+  "valueOfCompletedJobs": "Value of jobs you've completed",
+
+  "switchBusiness": "Switch business",
+  "switchBusinessSubtitle": "For cleaners working with more than one business",
+  "switchBusinessDescription": "Jobs, messages, and earnings shown in the app will switch to whichever business you pick.",
+  "signOut": "Sign out",
+  "couldNotSwitchBusiness": "Could not switch business. Try again.",
+  "couldNotLoadBusinesses": "Could not load your businesses",
+  "onlyOneBusiness": "You only work with one business right now.",
+  "switchedToBusiness": "Switched to {name}",
+  "@switchedToBusiness": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "jobsListTitle": "All jobs",
+  "noJobs": "No jobs",
+  "jobDetailsTitle": "Job details",
+  "failedToLoadJob": "Failed to load job",
+  "cleaningJob": "Cleaning job",
+  "address": "Address",
+  "propertyNotes": "Property notes",
+  "accessCode": "Access code",
+  "keyLocation": "Key location",
+  "parking": "Parking",
+  "pets": "Pets",
+  "notes": "Notes",
+  "actionFailed": "Action failed. Please try again.",
+  "onMyWay": "On my way",
+  "customerNotifiedOnMyWay": "Customer notified you're on your way",
+  "couldNotSendNotification": "Couldn't send notification. Try again.",
+  "checkIn": "Check in",
+  "startJob": "Start job",
+  "addAfterPhotoToFinish": "Add an after-photo above to finish this job.",
+  "completeJob": "Complete job",
+  "defaultServiceName": "Cleaning",
+  "estimatedMinutes": "· {count, plural, one {# min} other {# min}}",
+  "@estimatedMinutes": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "jobStatusInProgress": "In progress",
+  "jobStatusEnRoute": "En route",
+  "jobStatusCompleted": "Completed",
+  "jobStatusCancelled": "Cancelled",
+  "jobStatusAssigned": "Assigned",
+  "jobStatusConfirmed": "Confirmed",
+  "jobStatusNoShow": "No show",
+
+  "photoUploadFailed": "Photo upload failed — check your connection and try again.",
+  "photoProofTitle": "Photo proof",
+  "photoProofDescription": "Add at least one after-photo before you can mark this job complete.",
+  "photoStageBefore": "Before",
+  "photoStageAfter": "After",
+  "photoStageNoneAdded": "{label} photo",
+  "@photoStageNoneAdded": {
+    "placeholders": { "label": { "type": "String" } }
+  },
+  "photoStageSomeAdded": "{label} photo · {count} added",
+  "@photoStageSomeAdded": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+  "add": "Add",
+  "addAnother": "Add another",
+
+  "availabilitySaved": "Availability saved",
+  "availabilitySaveFailed": "Could not save. Try again.",
+  "failedToLoadAvailability": "Failed to load availability",
+  "notAvailable": "Not available",
+  "saveAvailability": "Save availability",
+  "monday": "Monday",
+  "tuesday": "Tuesday",
+  "wednesday": "Wednesday",
+  "thursday": "Thursday",
+  "friday": "Friday",
+  "saturday": "Saturday",
+  "sunday": "Sunday",
+
+  "failedToLoadProfile": "Failed to load profile",
+  "name": "Name",
+  "business": "Business",
+  "phoneHint": "e.g. +1 555 123 4567",
+  "nameEmailManagedByBusiness": "Name and email are managed by your business — contact them to change these.",
+  "saveChanges": "Save changes",
+  "profileUpdated": "Profile updated",
+  "profileUpdateFailed": "Could not update profile. Try again.",
+
+  "failedToLoadDocuments": "Failed to load documents",
+  "noDocumentsYet": "No documents yet.\nTap \"Add document\" to upload your ID, a\ncertification, or proof of insurance.",
+  "addDocument": "Add document",
+  "couldNotOpenDocument": "Could not open document",
+  "docExpired": "Expired",
+  "docExpiringSoon": "Expiring soon",
+  "docTypeIdCard": "ID card",
+  "docTypeCertification": "Certification",
+  "docTypeInsurance": "Insurance",
+  "docTypeBackgroundCheck": "Background check",
+  "docTypeContract": "Contract",
+  "docTypeOther": "Other",
+  "expiresOn": "Expires {date}",
+  "@expiresOn": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "addTitleAndPhoto": "Add a title and a photo of the document",
+  "uploadFailed": "Upload failed. Try again.",
+  "type": "Type",
+  "titleLabel": "Title",
+  "setExpiryDateOptional": "Set expiry date (optional)",
+  "takeOrChoosePhoto": "Take or choose a photo",
+  "photoSelected": "Photo selected",
+  "upload": "Upload",
+
+  "finishConnectingStripe": "Finish connecting Stripe (optional)",
+  "getPaidFasterWithStripe": "Get paid faster with Stripe (optional)",
+  "stripeOptionalExplanation": "Your business can already pay you by bank transfer or cash. Connect Stripe only if you want automatic deposits.",
+  "resumeStripeSetup": "Resume Stripe setup",
+  "connectStripe": "Connect Stripe",
+  "couldNotOpenStripeOnboarding": "Could not open the Stripe onboarding page",
+  "couldNotStartOnboarding": "Could not start onboarding: {error}",
+  "@couldNotStartOnboarding": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "couldNotLoadEarningsRetry": "Could not load earnings — retry",
+  "noEarningsYet": "No earnings yet",
+  "noEarningsExplanation": "Earnings show up here once your business sets a pay rate for you and you complete a job. You do not need Stripe to get paid — your employer can use bank transfer or cash.",
+  "pending": "Pending",
+  "paidToDate": "Paid to date",
+  "businessPaysYouExplanation": "Your business pays you — often by bank transfer or cash. Stripe is optional for automatic deposits.",
+  "recentPayouts": "Recent payouts",
+  "recentJobs": "Recent jobs",
+  "paidOn": "Paid {date}",
+  "@paidOn": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "createdOn": "Created {date}",
+  "@createdOn": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "refNumber": "Ref {ref}",
+  "@refNumber": {
+    "placeholders": { "ref": { "type": "String" } }
+  },
+  "jobOn": "Job {date}",
+  "@jobOn": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "payoutMethodStripe": "Stripe",
+  "payoutMethodBankTransfer": "Bank transfer",
+  "payoutMethodCash": "Cash",
+  "payoutStatusPending": "Pending",
+  "payoutStatusPaid": "Paid",
+  "payoutStatusCanceled": "Canceled",
+  "earningStatusPending": "Pending",
+  "earningStatusInPayout": "In payout",
+  "earningStatusPaid": "Paid",
+  "earningStatusVoided": "Voided",
+
+  "couldNotLoadMessages": "Could not load messages",
+  "noConversationsYet": "No conversations yet",
+  "messageYourBusiness": "Message your business",
+  "businessFallbackName": "Business",
+  "attachment": "Attachment",
+  "noMessagesYet": "No messages yet",
+  "conversationDetailsTitle": "Conversation details",
+  "couldNotLoadMessagesRetry": "Could not load messages — retry",
+  "sendMessageBelow": "Send a message to your business below",
+  "messageYourBusinessHint": "Message your business…",
+  "messageFailedToSend": "Message failed to send — try again",
+
+  "checklistDefaultTitle": "Checklist",
+  "checklistOfflineSyncNotice": "Offline — {count, plural, one {# item} other {# items}} will sync once you're back online.",
+  "@checklistOfflineSyncNotice": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "syncing": "Syncing…"
+}

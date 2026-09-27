@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme/app_theme.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../models/business_affiliation.dart';
 import '../providers/auth_provider.dart';
 import '../providers/earnings_provider.dart';
@@ -36,6 +37,7 @@ class BusinessSwitcherSheet extends ConsumerWidget {
     WidgetRef ref,
     BusinessAffiliation affiliation,
   ) async {
+    final l10n = AppLocalizations.of(context);
     final ok = await ref.read(authProvider.notifier).switchBusiness(
           affiliation.businessId,
         );
@@ -44,7 +46,7 @@ class BusinessSwitcherSheet extends ConsumerWidget {
     if (!ok) {
       final error = ref.read(authProvider).error;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error ?? 'Could not switch business. Try again.')),
+        SnackBar(content: Text(error ?? l10n.couldNotSwitchBusiness)),
       );
       return;
     }
@@ -63,7 +65,7 @@ class BusinessSwitcherSheet extends ConsumerWidget {
 
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Switched to ${affiliation.businessName}')),
+      SnackBar(content: Text(l10n.switchedToBusiness(affiliation.businessName))),
     );
   }
 
@@ -72,6 +74,7 @@ class BusinessSwitcherSheet extends ConsumerWidget {
     final affiliationsAsync = ref.watch(affiliationsProvider);
     final currentBusinessId = ref.watch(authProvider).profile?.businessId;
     final switching = ref.watch(authProvider).isLoading;
+    final l10n = AppLocalizations.of(context);
 
     return SafeArea(
       child: Padding(
@@ -92,15 +95,14 @@ class BusinessSwitcherSheet extends ConsumerWidget {
               ),
             ),
             Text(
-              'Switch business',
+              l10n.switchBusiness,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
             ),
             const SizedBox(height: 4),
             Text(
-              'Jobs, messages, and earnings shown in the app will switch to '
-              'whichever business you pick.',
+              l10n.switchBusinessDescription,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -115,21 +117,21 @@ class BusinessSwitcherSheet extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Column(
                   children: [
-                    const Text('Could not load your businesses'),
+                    Text(l10n.couldNotLoadBusinesses),
                     TextButton(
                       onPressed: () => ref.invalidate(affiliationsProvider),
-                      child: const Text('Retry'),
+                      child: Text(l10n.retry),
                     ),
                   ],
                 ),
               ),
               data: (affiliations) {
                 if (affiliations.length <= 1) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Text(
-                      'You only work with one business right now.',
-                      style: TextStyle(color: AppColors.textSecondary),
+                      l10n.onlyOneBusiness,
+                      style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   );
                 }

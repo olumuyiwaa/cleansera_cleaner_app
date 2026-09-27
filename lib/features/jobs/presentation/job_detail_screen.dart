@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../models/job.dart';
 import '../../../providers/jobs_provider.dart';
 import '../../checklist/checklist_section.dart';
@@ -19,19 +20,20 @@ class JobDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final jobAsync = ref.watch(jobDetailProvider(jobId));
     final actions = ref.watch(jobActionsProvider);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Job details')),
+      appBar: AppBar(title: Text(l10n.jobDetailsTitle)),
       body: jobAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('Failed to load job'),
+              Text(l10n.failedToLoadJob),
               TextButton(
                 onPressed: () => ref.invalidate(jobDetailProvider(jobId)),
-                child: const Text('Retry'),
+                child: Text(l10n.retry),
               ),
             ],
           ),
@@ -92,7 +94,8 @@ class _JobBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final timeFmt = DateFormat('EEE, MMM d · h:mm a');
+    final l10n = AppLocalizations.of(context);
+    final timeFmt = DateFormat('EEE, MMM d · h:mm a', l10n.localeName);
     final busy = actionsState.isLoading;
 
     return Column(
@@ -102,7 +105,7 @@ class _JobBody extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             children: [
               Text(
-                job.service?.name ?? 'Cleaning job',
+                job.service?.name ?? l10n.cleaningJob,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -135,7 +138,7 @@ class _JobBody extends ConsumerWidget {
                   child: ListTile(
                     leading: const Icon(Icons.location_on_outlined,
                         color: AppColors.primary),
-                    title: const Text('Address'),
+                    title: Text(l10n.address),
                     subtitle: Text(job.address!.fullAddress),
                     trailing: IconButton(
                       icon: const Icon(Icons.map_outlined),
@@ -153,39 +156,39 @@ class _JobBody extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Property notes',
+                          l10n.propertyNotes,
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         const SizedBox(height: 10),
                         if (job.accessCode != null && job.accessCode!.isNotEmpty)
                           _PropertyNoteRow(
                             icon: Icons.pin_outlined,
-                            label: 'Access code',
+                            label: l10n.accessCode,
                             value: job.accessCode!,
                           ),
                         if (job.keyLocation != null && job.keyLocation!.isNotEmpty)
                           _PropertyNoteRow(
                             icon: Icons.key_outlined,
-                            label: 'Key location',
+                            label: l10n.keyLocation,
                             value: job.keyLocation!,
                           ),
                         if (job.parkingInstructions != null &&
                             job.parkingInstructions!.isNotEmpty)
                           _PropertyNoteRow(
                             icon: Icons.local_parking_outlined,
-                            label: 'Parking',
+                            label: l10n.parking,
                             value: job.parkingInstructions!,
                           ),
                         if (job.petNotes != null && job.petNotes!.isNotEmpty)
                           _PropertyNoteRow(
                             icon: Icons.pets_outlined,
-                            label: 'Pets',
+                            label: l10n.pets,
                             value: job.petNotes!,
                           ),
                         if (job.notes != null && job.notes!.isNotEmpty)
                           _PropertyNoteRow(
                             icon: Icons.notes_outlined,
-                            label: 'Notes',
+                            label: l10n.notes,
                             value: job.notes!,
                           ),
                       ],
@@ -209,7 +212,7 @@ class _JobBody extends ConsumerWidget {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Text(
-                      'Action failed. Please try again.',
+                      l10n.actionFailed,
                       style: TextStyle(color: AppColors.error),
                     ),
                   ),
@@ -226,22 +229,22 @@ class _JobBody extends ConsumerWidget {
                                 SnackBar(
                                   content: Text(
                                     ok
-                                        ? "Customer notified you're on your way"
-                                        : "Couldn't send notification. Try again.",
+                                        ? l10n.customerNotifiedOnMyWay
+                                        : l10n.couldNotSendNotification,
                                   ),
                                 ),
                               );
                             }
                           },
                     icon: const Icon(Icons.directions_car_outlined),
-                    label: Text(busy ? 'Working…' : "On my way"),
+                    label: Text(busy ? l10n.working : l10n.onMyWay),
                   ),
                 if (job.canSendOnMyWay) const SizedBox(height: 8),
                 if (job.canCheckIn)
                   ElevatedButton.icon(
                     onPressed: busy ? null : () => _checkIn(ref),
                     icon: const Icon(Icons.login),
-                    label: Text(busy ? 'Working…' : 'Check in'),
+                    label: Text(busy ? l10n.working : l10n.checkIn),
                   ),
                 if (job.canStart && !job.canCheckIn)
                   ElevatedButton.icon(
@@ -249,7 +252,7 @@ class _JobBody extends ConsumerWidget {
                         ? null
                         : () => ref.read(jobActionsProvider.notifier).start(job.id),
                     icon: const Icon(Icons.play_arrow),
-                    label: Text(busy ? 'Working…' : 'Start job'),
+                    label: Text(busy ? l10n.working : l10n.startJob),
                   ),
                 if (job.canComplete) ...[
                   const SizedBox(height: 8),
@@ -257,7 +260,7 @@ class _JobBody extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Text(
-                        'Add an after-photo above to finish this job.',
+                        l10n.addAfterPhotoToFinish,
                         style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
                       ),
                     ),
@@ -268,7 +271,7 @@ class _JobBody extends ConsumerWidget {
                             .read(jobActionsProvider.notifier)
                             .complete(job.id),
                     icon: const Icon(Icons.check_circle_outline),
-                    label: Text(busy ? 'Working…' : 'Complete job'),
+                    label: Text(busy ? l10n.working : l10n.completeJob),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.success,
                     ),

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../models/job.dart';
 
 class JobCard extends StatelessWidget {
@@ -28,22 +29,22 @@ class JobCard extends StatelessWidget {
     }
   }
 
-  String get _statusLabel {
+  String _statusLabel(AppLocalizations l10n) {
     switch (job.status) {
       case JobStatus.inProgress:
-        return 'In progress';
+        return l10n.jobStatusInProgress;
       case JobStatus.enRoute:
-        return 'En route';
+        return l10n.jobStatusEnRoute;
       case JobStatus.completed:
-        return 'Completed';
+        return l10n.jobStatusCompleted;
       case JobStatus.cancelled:
-        return 'Cancelled';
+        return l10n.jobStatusCancelled;
       case JobStatus.assigned:
-        return 'Assigned';
+        return l10n.jobStatusAssigned;
       case JobStatus.confirmed:
-        return 'Confirmed';
+        return l10n.jobStatusConfirmed;
       case JobStatus.noShow:
-        return 'No show';
+        return l10n.jobStatusNoShow;
       default:
         return job.status.name;
     }
@@ -51,7 +52,8 @@ class JobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final timeFmt = DateFormat('h:mm a');
+    final l10n = AppLocalizations.of(context);
+    final timeFmt = DateFormat('h:mm a', l10n.localeName);
     final timeRange = job.scheduledEnd != null
         ? '${timeFmt.format(job.scheduledStart)} – ${timeFmt.format(job.scheduledEnd!)}'
         : timeFmt.format(job.scheduledStart);
@@ -69,7 +71,7 @@ class JobCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      job.service?.name ?? 'Cleaning',
+                      job.service?.name ?? l10n.defaultServiceName,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -83,7 +85,7 @@ class JobCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      _statusLabel,
+                      _statusLabel(l10n),
                       style: TextStyle(
                         color: _statusColor,
                         fontSize: 12,
@@ -106,7 +108,7 @@ class JobCard extends StatelessWidget {
                   if (job.service?.estimatedMinutes != null) ...[
                     const SizedBox(width: 12),
                     Text(
-                      '· ${job.service!.estimatedMinutes} min',
+                      l10n.estimatedMinutes(job.service!.estimatedMinutes),
                       style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   ],

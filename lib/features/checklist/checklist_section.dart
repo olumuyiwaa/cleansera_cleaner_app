@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../providers/jobs_provider.dart';
 import '../../providers/offline_queue_provider.dart';
 
@@ -14,6 +15,7 @@ class ChecklistSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final checklistAsync = ref.watch(jobChecklistProvider(bookingId));
     final pendingItemIds = ref.watch(offlineChecklistQueueProvider)[bookingId] ?? const {};
+    final l10n = AppLocalizations.of(context);
 
     return checklistAsync.when(
       loading: () => const Card(
@@ -45,7 +47,7 @@ class ChecklistSection extends ConsumerWidget {
                 Row(
                   children: [
                     Text(
-                      checklist.title ?? 'Checklist',
+                      checklist.title ?? l10n.checklistDefaultTitle,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -75,7 +77,7 @@ class ChecklistSection extends ConsumerWidget {
                 if (pendingItemIds.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(
-                    "Offline — ${pendingItemIds.length} item${pendingItemIds.length == 1 ? '' : 's'} will sync once you're back online.",
+                    l10n.checklistOfflineSyncNotice(pendingItemIds.length),
                     style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                   ),
                 ],
@@ -103,7 +105,7 @@ class ChecklistSection extends ConsumerWidget {
                     ),
                     subtitle: item.description != null
                         ? Text(item.description!)
-                        : (isPending ? const Text('Syncing…') : null),
+                        : (isPending ? Text(l10n.syncing) : null),
                     controlAffinity: ListTileControlAffinity.leading,
                     contentPadding: EdgeInsets.zero,
                     activeColor: AppColors.primary,

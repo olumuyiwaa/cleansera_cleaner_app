@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../l10n/generated/app_localizations.dart';
 
 class CleanerEarningEntry {
   const CleanerEarningEntry({
@@ -27,6 +28,21 @@ class CleanerEarningEntry {
       status: json['status'] as String,
       earnedAt: DateTime.parse(json['earnedAt'] as String),
     );
+  }
+
+  String statusLabel(AppLocalizations l10n) {
+    switch (status) {
+      case 'PENDING':
+        return l10n.earningStatusPending;
+      case 'IN_PAYOUT':
+        return l10n.earningStatusInPayout;
+      case 'PAID':
+        return l10n.earningStatusPaid;
+      case 'VOIDED':
+        return l10n.earningStatusVoided;
+      default:
+        return status;
+    }
   }
 }
 
@@ -63,21 +79,36 @@ class CleanerPayoutEntry {
     );
   }
 
-  String get methodLabel {
+  /// `l10n` must be `AppLocalizations.of(context)` — same pattern as
+  /// docTypeLabel/statusLabel elsewhere in the app.
+  String methodLabel(AppLocalizations l10n) {
     switch (method) {
       case 'STRIPE':
-        return 'Stripe';
+        return l10n.payoutMethodStripe;
       case 'MANUAL_TRANSFER':
       case 'BANK_TRANSFER':
-        return 'Bank transfer';
+        return l10n.payoutMethodBankTransfer;
       case 'CASH':
       case 'MANUAL_CASH':
-        return 'Cash';
+        return l10n.payoutMethodCash;
       case null:
       case '':
         return '—';
       default:
         return method!;
+    }
+  }
+
+  String statusLabel(AppLocalizations l10n) {
+    switch (status) {
+      case 'PENDING':
+        return l10n.payoutStatusPending;
+      case 'PAID':
+        return l10n.payoutStatusPaid;
+      case 'CANCELED':
+        return l10n.payoutStatusCanceled;
+      default:
+        return status;
     }
   }
 }
