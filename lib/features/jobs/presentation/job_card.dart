@@ -108,7 +108,7 @@ class JobCard extends StatelessWidget {
                   if (job.service?.estimatedMinutes != null) ...[
                     const SizedBox(width: 12),
                     Text(
-                      l10n.estimatedMinutes(job.service!.estimatedMinutes),
+                      l10n.estimatedMinutes(job.service!.estimatedMinutes!),
                       style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   ],
